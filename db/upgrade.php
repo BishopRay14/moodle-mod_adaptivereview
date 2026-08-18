@@ -116,19 +116,12 @@ function xmldb_adaptivereview_upgrade($oldversion) {
             $dbman->rename_field($table, $field, 'itemid');
         }
 
-        $key = new xmldb_key('cardid', XMLDB_KEY_FOREIGN, ['itemid'], 'adaptivereview_items', ['id']);
-        if ($dbman->index_exists($table, $key)) {
-            $dbman->rename_key($table, $key, 'itemid');
-        }
-
-        $index = new xmldb_index('userid_cardid', XMLDB_INDEX_UNIQUE, ['userid', 'itemid']);
-        if ($dbman->index_exists($table, $index)) {
-            $dbman->rename_index($table, $index, 'userid_itemid');
-        }
+        // Moodle identifies keys and indexes by their fields, not their XMLDB names.
+        // Renaming the table and field above preserves both database indexes, so no
+        // experimental and database-dependent key/index rename is needed here.
 
         upgrade_mod_savepoint(true, 2026070701, 'adaptivereview');
     }
 
     return true;
 }
-
