@@ -39,9 +39,6 @@ $PAGE->set_title(format_string($adaptivereview->name));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 
-// Include standard Moodle JS for ajax if needed.
-$PAGE->requires->js_call_amd('core/ajax', 'init');
-
 // Export strings for Vue frontend
 $vuestrings = [
     'dashboardtitle', 'dashboardsbtitle', 'howitworks', 'cards', 'systemtitle', 
