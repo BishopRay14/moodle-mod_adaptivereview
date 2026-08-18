@@ -39,13 +39,52 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
             'adaptivereview_mastery',
             [
                 'userid' => 'privacy:metadata:adaptivereview_mastery:userid',
-                'cardid' => 'privacy:metadata:adaptivereview_mastery:cardid',
+                'itemid' => 'privacy:metadata:adaptivereview_mastery:itemid',
                 'box_number' => 'privacy:metadata:adaptivereview_mastery:box_number',
                 'count_correct' => 'privacy:metadata:adaptivereview_mastery:count_correct',
                 'count_wrong' => 'privacy:metadata:adaptivereview_mastery:count_wrong',
                 'last_reviewed' => 'privacy:metadata:adaptivereview_mastery:last_reviewed',
+                'masteryscore' => 'privacy:metadata:adaptivereview_mastery:masteryscore',
+                'requiredintervaldays' => 'privacy:metadata:adaptivereview_mastery:requiredintervaldays',
+                'nextreviewdate' => 'privacy:metadata:adaptivereview_mastery:nextreviewdate',
+                'lastreviewdate' => 'privacy:metadata:adaptivereview_mastery:lastreviewdate',
             ],
             'privacy:metadata:adaptivereview_mastery'
+        );
+        $collection->add_database_table(
+            'adaptivereview_sessions',
+            [
+                'adaptivereviewid' => 'privacy:metadata:adaptivereview_sessions:adaptivereviewid',
+                'userid' => 'privacy:metadata:adaptivereview_sessions:userid',
+                'sessionkey' => 'privacy:metadata:adaptivereview_sessions:sessionkey',
+                'mode' => 'privacy:metadata:adaptivereview_sessions:mode',
+                'timecreated' => 'privacy:metadata:adaptivereview_sessions:timecreated',
+                'timecompleted' => 'privacy:metadata:adaptivereview_sessions:timecompleted',
+            ],
+            'privacy:metadata:adaptivereview_sessions'
+        );
+        $collection->add_database_table(
+            'adaptivereview_attempts',
+            [
+                'sessionid' => 'privacy:metadata:adaptivereview_attempts:sessionid',
+                'itemid' => 'privacy:metadata:adaptivereview_attempts:itemid',
+                'attemptnumber' => 'privacy:metadata:adaptivereview_attempts:attemptnumber',
+                'response' => 'privacy:metadata:adaptivereview_attempts:response',
+                'wasdue' => 'privacy:metadata:adaptivereview_attempts:wasdue',
+                'isremediation' => 'privacy:metadata:adaptivereview_attempts:isremediation',
+                'masteryeligible' => 'privacy:metadata:adaptivereview_attempts:masteryeligible',
+                'masterybefore' => 'privacy:metadata:adaptivereview_attempts:masterybefore',
+                'masterygain' => 'privacy:metadata:adaptivereview_attempts:masterygain',
+                'masteryafter' => 'privacy:metadata:adaptivereview_attempts:masteryafter',
+                'intervalbefore' => 'privacy:metadata:adaptivereview_attempts:intervalbefore',
+                'intervalafter' => 'privacy:metadata:adaptivereview_attempts:intervalafter',
+                'previousreviewdate' => 'privacy:metadata:adaptivereview_attempts:previousreviewdate',
+                'previousduedate' => 'privacy:metadata:adaptivereview_attempts:previousduedate',
+                'nextreviewdate' => 'privacy:metadata:adaptivereview_attempts:nextreviewdate',
+                'algorithmversion' => 'privacy:metadata:adaptivereview_attempts:algorithmversion',
+                'timecreated' => 'privacy:metadata:adaptivereview_attempts:timecreated',
+            ],
+            'privacy:metadata:adaptivereview_attempts'
         );
         return $collection;
     }
@@ -65,6 +104,14 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
             'contextlevel' => CONTEXT_MODULE,
             'userid' => $userid,
         ];
+        $contextlist->add_from_sql($sql, $params);
+
+        $sql = "SELECT c.id
+                  FROM {context} c
+                  JOIN {course_modules} cm ON cm.id = c.instanceid AND c.contextlevel = :contextlevel
+                  JOIN {modules} m ON m.name = :modname AND m.id = cm.module
+                  JOIN {adaptivereview_sessions} s ON s.adaptivereviewid = cm.instance
+                 WHERE s.userid = :userid";
         $contextlist->add_from_sql($sql, $params);
         return $contextlist;
     }
@@ -88,6 +135,13 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
             'cmid' => $context->instanceid
         ];
         
+        $userlist->add_from_sql('userid', $sql, $params);
+
+        $sql = "SELECT s.userid
+                  FROM {course_modules} cm
+                  JOIN {modules} m ON m.name = :modname AND m.id = cm.module
+                  JOIN {adaptivereview_sessions} s ON s.adaptivereviewid = cm.instance
+                 WHERE cm.id = :cmid";
         $userlist->add_from_sql('userid', $sql, $params);
     }
 
@@ -120,13 +174,77 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
                             'box_number' => $rec->box_number,
                             'count_correct' => $rec->count_correct,
                             'count_wrong' => $rec->count_wrong,
-                            'last_reviewed' => date('Y-m-d H:i:s', $rec->last_reviewed)
+                            'last_reviewed' => date('Y-m-d H:i:s', $rec->last_reviewed),
+                            'masteryscore' => $rec->masteryscore,
+                            'requiredintervaldays' => $rec->requiredintervaldays,
+                            'nextreviewdate' => date('Y-m-d H:i:s', $rec->nextreviewdate),
+                            'lastreviewdate' => date('Y-m-d H:i:s', $rec->lastreviewdate),
                         ];
                     }
                     
                     \core_privacy\local\request\writer::with_context($context)->export_data(
                         [get_string('pluginname', 'mod_adaptivereview'), get_string('cards', 'mod_adaptivereview')],
                         (object)['progress' => $exportdata]
+                    );
+                }
+
+                $sessions = $DB->get_records('adaptivereview_sessions', [
+                    'adaptivereviewid' => $cm->instance,
+                    'userid' => $userid,
+                ], 'timecreated, id');
+                if ($sessions) {
+                    $sessiondata = [];
+                    foreach ($sessions as $session) {
+                        $sessiondata[] = (object) [
+                            'sessionkey' => $session->sessionkey,
+                            'mode' => $session->mode,
+                            'timecreated' => date('Y-m-d H:i:s', $session->timecreated),
+                            'timecompleted' => $session->timecompleted
+                                ? date('Y-m-d H:i:s', $session->timecompleted)
+                                : null,
+                        ];
+                    }
+                    \core_privacy\local\request\writer::with_context($context)->export_data(
+                        [get_string('pluginname', 'mod_adaptivereview'), get_string('reviewsessions', 'mod_adaptivereview')],
+                        (object) ['sessions' => $sessiondata]
+                    );
+                }
+
+                $sql = "SELECT a.*, s.mode, rc.question, rc.answer
+                          FROM {adaptivereview_attempts} a
+                          JOIN {adaptivereview_sessions} s ON s.id = a.sessionid
+                          JOIN {adaptivereview_items} rc ON rc.id = a.itemid
+                         WHERE s.adaptivereviewid = ? AND s.userid = ?
+                      ORDER BY a.timecreated, a.id";
+                $attemptrecords = $DB->get_records_sql($sql, [$cm->instance, $userid]);
+
+                if (!empty($attemptrecords)) {
+                    $history = [];
+                    foreach ($attemptrecords as $attempt) {
+                        $history[] = (object) [
+                            'question' => format_text($attempt->question),
+                            'answer' => format_text($attempt->answer),
+                            'mode' => $attempt->mode,
+                            'attemptnumber' => $attempt->attemptnumber,
+                            'response' => $attempt->response,
+                            'wasdue' => $attempt->wasdue,
+                            'isremediation' => $attempt->isremediation,
+                            'masteryeligible' => $attempt->masteryeligible,
+                            'masterybefore' => $attempt->masterybefore,
+                            'masterygain' => $attempt->masterygain,
+                            'masteryafter' => $attempt->masteryafter,
+                            'intervalbefore' => $attempt->intervalbefore,
+                            'intervalafter' => $attempt->intervalafter,
+                            'previousreviewdate' => $attempt->previousreviewdate,
+                            'previousduedate' => $attempt->previousduedate,
+                            'nextreviewdate' => $attempt->nextreviewdate,
+                            'algorithmversion' => $attempt->algorithmversion,
+                            'timecreated' => date('Y-m-d H:i:s', $attempt->timecreated),
+                        ];
+                    }
+                    \core_privacy\local\request\writer::with_context($context)->export_data(
+                        [get_string('pluginname', 'mod_adaptivereview'), get_string('reviewhistory', 'mod_adaptivereview')],
+                        (object) ['attempts' => $history]
                     );
                 }
             }
@@ -145,6 +263,17 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
                       JOIN {adaptivereview_items} c ON c.id = p.itemid
                      WHERE c.adaptivereviewid = ?";
             $DB->delete_records_select('adaptivereview_mastery', "id IN ($sql)", [$cm->instance]);
+
+            $sessionids = $DB->get_fieldset_select(
+                'adaptivereview_sessions',
+                'id',
+                'adaptivereviewid = ?',
+                [$cm->instance]
+            );
+            if ($sessionids) {
+                $DB->delete_records_list('adaptivereview_attempts', 'sessionid', $sessionids);
+            }
+            $DB->delete_records('adaptivereview_sessions', ['adaptivereviewid' => $cm->instance]);
         }
     }
 
@@ -163,6 +292,17 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
                               JOIN {adaptivereview_items} c ON c.id = p.itemid
                              WHERE c.adaptivereviewid = ? AND p.userid = ?";
                     $DB->delete_records_select('adaptivereview_mastery', "id IN ($sql)", [$cm->instance, $userid]);
+
+                    $sessionids = $DB->get_fieldset_select(
+                        'adaptivereview_sessions',
+                        'id',
+                        'adaptivereviewid = ? AND userid = ?',
+                        [$cm->instance, $userid]
+                    );
+                    if ($sessionids) {
+                        $DB->delete_records_list('adaptivereview_attempts', 'sessionid', $sessionids);
+                        $DB->delete_records_list('adaptivereview_sessions', 'id', $sessionids);
+                    }
                 }
             }
         }
@@ -191,6 +331,17 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
             $params = array_merge([$cm->instance], $inparams);
             
             $DB->delete_records_select('adaptivereview_mastery', "id IN ($sql)", $params);
+
+            $sessionids = $DB->get_fieldset_select(
+                'adaptivereview_sessions',
+                'id',
+                "adaptivereviewid = ? AND userid $insql",
+                $params
+            );
+            if ($sessionids) {
+                $DB->delete_records_list('adaptivereview_attempts', 'sessionid', $sessionids);
+                $DB->delete_records_list('adaptivereview_sessions', 'id', $sessionids);
+            }
         }
     }
 }

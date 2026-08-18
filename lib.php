@@ -79,9 +79,11 @@ function adaptivereview_delete_instance($id) {
     $sql = "SELECT id FROM {adaptivereview_items} WHERE adaptivereviewid = ?";
     if ($cards = $DB->get_records_sql($sql, [$id])) {
         list($in, $params) = $DB->get_in_or_equal(array_keys($cards));
+        $DB->delete_records_select('adaptivereview_attempts', "itemid $in", $params);
         $DB->delete_records_select('adaptivereview_mastery', "itemid $in", $params);
     }
-    
+
+    $DB->delete_records('adaptivereview_sessions', ['adaptivereviewid' => $id]);
     $DB->delete_records('adaptivereview_items', ['adaptivereviewid' => $id]);
     $DB->delete_records('adaptivereview', ['id' => $id]);
     return true;
@@ -200,4 +202,3 @@ function adaptivereview_extend_settings_navigation(settings_navigation $settings
         );
     }
 }
-

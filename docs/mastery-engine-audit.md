@@ -12,6 +12,15 @@ the product-intent source of truth.
 
 This document does not select a mastery formula or replace the scheduler.
 
+## Implementation decision
+
+Briley approved using the recommended defaults and confirmed that existing
+prototype mastery data has no value. Version `0.2.0-prototype` therefore starts
+an evidence-backed history at zero, retains history when a learner resets the
+current summary, records early practice without mastery gain, uses one
+server-owned session per dashboard review choice, and includes history when a
+course backup includes user data.
+
 ## Executive finding
 
 The current user interface demonstrates several intended learning behaviors,
@@ -261,22 +270,17 @@ it cannot be mistaken for retrieval evidence.
 8. Only then implement the approved mastery-gain formula and adaptive
    scheduling.
 
-## Product decisions needed before history implementation
+## Resolved history-foundation decisions
 
-1. **Reset semantics:** Should Reset Learning Progress delete review history,
-   or only reset the current mastery summary while retaining history for audit?
-2. **Early practice record:** The recommendation is to record it as an attempt
-   with `masteryeligible = 0` unless the later formula awards limited evidence.
-3. **New-card success:** Should a first successful retrieval create an initial
-   mastery gain immediately, or establish a baseline that must be confirmed
-   after elapsed time?
-4. **Session boundary:** The recommendation is one server session per dashboard
-   category selection, ending when the learner finishes or leaves it idle past
-   an expiration window.
-5. **Backup policy:** Should course backups with user data carry review history,
-   or only the current mastery summary?
-
-These decisions do not require selecting the full mastery formula yet.
+1. **Reset semantics:** Reset only the mutable mastery summary and retain review
+   history for audit.
+2. **Early practice record:** Record the attempt with `masteryeligible = 0`.
+3. **New-card success:** Record zero mastery gain until an elapsed-time mastery
+   formula is approved.
+4. **Session boundary:** Use one server session per dashboard review choice and
+   expire abandoned sessions after eight hours.
+5. **Backup policy:** Include review history when a course backup includes user
+   data.
 
 ## Explicitly deferred
 

@@ -45,7 +45,7 @@ class mod_adaptivereview_lib_testcase extends advanced_testcase {
         global $DB;
 
         $course = $this->getDataGenerator()->create_course();
-        
+
         // 1. Test Add
         $adaptivereview = new \stdClass();
         $adaptivereview->course = $course->id;
@@ -53,7 +53,7 @@ class mod_adaptivereview_lib_testcase extends advanced_testcase {
         $adaptivereview->intro = 'Intro text';
         $adaptivereview->introformat = FORMAT_HTML;
         $adaptivereview->itemorder = 0;
-        
+
         $module = $this->getDataGenerator()->create_module('adaptivereview', (array)$adaptivereview);
         $this->assertNotEmpty($module->id);
 
@@ -70,15 +70,31 @@ class mod_adaptivereview_lib_testcase extends advanced_testcase {
         $updated = $DB->get_record('adaptivereview', ['id' => $module->id]);
         $this->assertEquals('Updated Adaptive Review Name', $updated->name);
 
+        // Create retained review history so deletion covers every user-data table.
+        $card = $DB->get_record('adaptivereview_items', ['adaptivereviewid' => $module->id], '*', MUST_EXIST);
+        $session = \mod_adaptivereview\local\review_manager::start_session(
+            (int) $module->id,
+            (int) get_admin()->id,
+            \mod_adaptivereview\local\review_manager::MODE_NEW
+        );
+        \mod_adaptivereview\local\review_manager::record_attempt(
+            $session,
+            $card,
+            \mod_adaptivereview\local\review_manager::RESPONSE_KNOW
+        );
+
         // 3. Test Delete
         $result = adaptivereview_delete_instance($module->id);
         $this->assertTrue($result);
 
         $deleted = $DB->get_record('adaptivereview', ['id' => $module->id]);
         $this->assertFalse($deleted);
-        
+
         // Cards should also be deleted
         $cardcount_after = $DB->count_records('adaptivereview_items', ['adaptivereviewid' => $module->id]);
         $this->assertEquals(0, $cardcount_after);
+        $this->assertEquals(0, $DB->count_records('adaptivereview_mastery'));
+        $this->assertEquals(0, $DB->count_records('adaptivereview_attempts'));
+        $this->assertEquals(0, $DB->count_records('adaptivereview_sessions'));
     }
 }

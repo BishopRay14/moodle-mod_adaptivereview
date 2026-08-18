@@ -10,13 +10,13 @@ Current prototype includes:
 
 - Modern Vue 3 dashboard
 - Individual card mastery tracking
+- Persistent review-session and attempt history
 - Set Mastery progress dashboard
 - Instructor-defined mastery goals
 - Searchable All Cards library
 - Retrieval-first review workflow
 - "I Know It" / "Not Yet" review interface
 - Recently Learned browse and practice modes
-- Moodle gradebook integration
 - Responsive user interface
 
 ## Planned Features
@@ -31,6 +31,7 @@ The long-term vision includes:
 - Analytics dashboard
 - Instructor authoring tools
 - Advanced mastery algorithms
+- Moodle gradebook integration based on instructor Goals
 
 ## Technology
 

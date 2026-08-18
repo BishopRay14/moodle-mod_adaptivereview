@@ -85,8 +85,8 @@ class external_test extends externallib_advanced_testcase {
         // Must be logged in as the student.
         $this->setUser($student);
 
-        // Call the external function for box 0 (New cards).
-        $result = external::get_cards_by_box($adaptivereview->id, 0);
+        // Call the external function for category 1 (New cards).
+        $result = external::get_cards_by_box($adaptivereview->id, 1);
 
         // We need to execute the return values cleaning process to simulate the web service server.
         $result = external_api::clean_returnvalue(external::get_cards_by_box_returns(), $result);
@@ -97,7 +97,7 @@ class external_test extends externallib_advanced_testcase {
     }
 
     /**
-     * Test submitting an answer (Spaced Repetition Logic).
+     * Test first attempts and same-session remediation history.
      */
     public function test_submit_answer() {
         global $DB;
@@ -105,25 +105,87 @@ class external_test extends externallib_advanced_testcase {
 
         $this->setUser($student);
 
-        // 1. Test "Green" rating (Rating = 2)
-        $result = external::submit_answer($card->id, 2);
+        $session = external::start_review_session($adaptivereview->id, 'new');
+        $session = external_api::clean_returnvalue(external::start_review_session_returns(), $session);
+
+        $result = external::submit_answer($card->id, 'know', $session['sessionkey']);
         $result = external_api::clean_returnvalue(external::submit_answer_returns(), $result);
-        
+
         $this->assertTrue($result['success']);
-        $this->assertEquals(1, $result['new_box']); // Should move from Box 0 to Box 1
+        $this->assertEquals(1, $result['attemptnumber']);
+        $this->assertTrue($result['masteryeligible']);
+        $this->assertEquals(0.0, $result['masterygain']);
 
-        // Check DB
         $progress = $DB->get_record('adaptivereview_mastery', ['userid' => $student->id, 'itemid' => $card->id]);
-        $this->assertEquals(1, $progress->box_number);
+        $this->assertEquals(0.0, $progress->masteryscore);
         $this->assertEquals(1, $progress->count_correct);
+        $this->assertGreaterThan(time(), $progress->nextreviewdate);
 
-        // 2. Test "Red" rating on Box 1 (Rating = 0) -> Should stay in Box 1 (minimum bound)
-        $result = external::submit_answer($card->id, 0);
+        $nextreviewdate = $progress->nextreviewdate;
+        $result = external::submit_answer($card->id, 'notyet', $session['sessionkey']);
         $result = external_api::clean_returnvalue(external::submit_answer_returns(), $result);
-        
+
+        $this->assertEquals(2, $result['attemptnumber']);
+        $this->assertFalse($result['masteryeligible']);
+
         $progress = $DB->get_record('adaptivereview_mastery', ['userid' => $student->id, 'itemid' => $card->id]);
-        $this->assertEquals(1, $progress->box_number); // Cannot drop below 1
+        $this->assertEquals(0.0, $progress->masteryscore);
+        $this->assertEquals($nextreviewdate, $progress->nextreviewdate);
+        $this->assertEquals(2, $DB->count_records('adaptivereview_attempts', ['itemid' => $card->id]));
+
+        $repeat = $DB->get_record('adaptivereview_attempts', [
+            'itemid' => $card->id,
+            'attemptnumber' => 2,
+        ]);
+        $this->assertEquals(1, $repeat->isremediation);
+    }
+
+    /**
+     * Test that Not Yet schedules recovery without reducing mastery.
+     */
+    public function test_not_yet_does_not_reduce_mastery() {
+        global $DB;
+        list($course, $student, $adaptivereview, $card) = $this->create_adaptivereview_activity();
+        $this->setUser($student);
+
+        $session = external::start_review_session($adaptivereview->id, 'new');
+        $result = external::submit_answer($card->id, 'notyet', $session['sessionkey']);
+        $result = external_api::clean_returnvalue(external::submit_answer_returns(), $result);
+
+        $this->assertFalse($result['masteryeligible']);
+        $this->assertEquals(0.0, $result['masterybefore']);
+        $this->assertEquals(0.0, $result['masterygain']);
+        $this->assertEquals(0.0, $result['masteryafter']);
+
+        $progress = $DB->get_record('adaptivereview_mastery', [
+            'userid' => $student->id,
+            'itemid' => $card->id,
+        ]);
+        $this->assertEquals(0.0, $progress->masteryscore);
         $this->assertEquals(1, $progress->count_wrong);
+        $this->assertEquals(0, $progress->lastreviewdate);
+        $this->assertGreaterThan(time(), $progress->nextreviewdate);
+    }
+
+    /**
+     * Test that early practice is recorded without changing summary state.
+     */
+    public function test_early_practice_records_history_only() {
+        global $DB;
+        list($course, $student, $adaptivereview, $card) = $this->create_adaptivereview_activity();
+        $this->setUser($student);
+
+        $session = external::start_review_session($adaptivereview->id, 'early');
+        $result = external::submit_answer($card->id, 'know', $session['sessionkey']);
+        $result = external_api::clean_returnvalue(external::submit_answer_returns(), $result);
+
+        $this->assertFalse($result['masteryeligible']);
+        $this->assertEquals(0, $result['nextreviewdate']);
+        $this->assertFalse($DB->record_exists('adaptivereview_mastery', [
+            'userid' => $student->id,
+            'itemid' => $card->id,
+        ]));
+        $this->assertEquals(1, $DB->count_records('adaptivereview_attempts'));
     }
 
     /**
@@ -136,7 +198,8 @@ class external_test extends externallib_advanced_testcase {
         $this->setUser($student);
 
         // Submit an answer to create a progress record.
-        external::submit_answer($card->id, 2);
+        $session = external::start_review_session($adaptivereview->id, 'new');
+        external::submit_answer($card->id, 'know', $session['sessionkey']);
         
         // Ensure progress exists.
         $this->assertEquals(1, $DB->count_records('adaptivereview_mastery', ['userid' => $student->id]));
@@ -150,6 +213,8 @@ class external_test extends externallib_advanced_testcase {
 
         // Progress should be completely gone for this user/instance.
         $this->assertEquals(0, $DB->count_records('adaptivereview_mastery', ['userid' => $student->id]));
+        $this->assertEquals(1, $DB->count_records('adaptivereview_attempts'));
+        $this->assertEquals(1, $DB->count_records('adaptivereview_sessions'));
     }
     /**
      * Test that invalid box number throws exception.
@@ -169,13 +234,16 @@ class external_test extends externallib_advanced_testcase {
         list($course, $student, $adaptivereview, $card) = $this->create_adaptivereview_activity();
         $this->setUser($student);
 
-        // Answer the same card 5 times
+        $session = external::start_review_session($adaptivereview->id, 'new');
+
+        // Record the same card five times in one session.
         for ($i = 0; $i < 5; $i++) {
-            external::submit_answer($card->id, 2);
+            external::submit_answer($card->id, 'know', $session['sessionkey']);
         }
 
-        // Despite 5 interactions, only 1 unique card was learned
+        // Despite five attempts, only one mutable summary row exists.
         $progress_count = $DB->count_records('adaptivereview_mastery', ['userid' => $student->id]);
-        $this->assertEquals(1, $progress_count); // Only 1 unique progress record (UNIQUE INDEX)
+        $this->assertEquals(1, $progress_count);
+        $this->assertEquals(5, $DB->count_records('adaptivereview_attempts'));
     }
 }

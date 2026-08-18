@@ -38,7 +38,20 @@ class backup_adaptivereview_activity_structure_step extends backup_activity_stru
 
         $masteries = new backup_nested_element('masteries');
         $mastery = new backup_nested_element('mastery', ['id'], [
-            'userid', 'box_number', 'status', 'count_correct', 'count_wrong', 'last_reviewed'
+            'userid', 'box_number', 'status', 'count_correct', 'count_wrong', 'last_reviewed',
+            'masteryscore', 'requiredintervaldays', 'nextreviewdate', 'lastreviewdate'
+        ]);
+
+        $sessions = new backup_nested_element('sessions');
+        $session = new backup_nested_element('session', ['id'], [
+            'userid', 'mode', 'timecreated', 'timecompleted'
+        ]);
+        $attempts = new backup_nested_element('attempts');
+        $attempt = new backup_nested_element('attempt', ['id'], [
+            'itemid', 'attemptnumber', 'response', 'wasdue', 'isremediation',
+            'masteryeligible', 'masterybefore', 'masterygain', 'masteryafter',
+            'intervalbefore', 'intervalafter', 'previousreviewdate', 'previousduedate',
+            'nextreviewdate', 'algorithmversion', 'timecreated'
         ]);
 
         // Build the tree.
@@ -47,6 +60,10 @@ class backup_adaptivereview_activity_structure_step extends backup_activity_stru
 
         $item->add_child($masteries);
         $masteries->add_child($mastery);
+        $adaptivereview->add_child($sessions);
+        $sessions->add_child($session);
+        $session->add_child($attempts);
+        $attempts->add_child($attempt);
 
         // Define sources.
         $adaptivereview->set_source_table('adaptivereview', ['id' => backup::VAR_ACTIVITYID]);
@@ -55,10 +72,13 @@ class backup_adaptivereview_activity_structure_step extends backup_activity_stru
         // Export user progress only if userinfo is included in the backup.
         if ($this->get_setting_value('userinfo')) {
             $mastery->set_source_table('adaptivereview_mastery', ['itemid' => backup::VAR_PARENTID]);
+            $session->set_source_table('adaptivereview_sessions', ['adaptivereviewid' => backup::VAR_PARENTID]);
+            $attempt->set_source_table('adaptivereview_attempts', ['sessionid' => backup::VAR_PARENTID]);
         }
 
         // Define id annotations to ensure accurate restoration of users and contexts.
         $mastery->annotate_ids('user', 'userid');
+        $session->annotate_ids('user', 'userid');
 
         // Annotate file areas (intro text files).
         $adaptivereview->annotate_files('mod_adaptivereview', 'intro', null); // Intro might have embedded images

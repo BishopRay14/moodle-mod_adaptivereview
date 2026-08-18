@@ -46,7 +46,7 @@ $vuestrings = [
     'hard_btn', 'hard_desc', 'systemtip', 'gotit', 'showhint', 'hint',
     'taptoflip', 'action_back', 'action_stay', 'action_next', 'backtodashboard', 
     'cardxofy_x', 'cardxofy_y', 'loadingcards', 'sessiondone', 'sessiondonedesc', 
-    'completed', 'error_loading_cards', 'box0', 'box1', 'box2', 'box3', 'box4', 'box5', 'queue_due', 'queue_new', 'queue_recent', 'queue_all',
+    'completed', 'error_loading_cards', 'error_saving_answer', 'box0', 'box1', 'box2', 'box3', 'box4', 'box5', 'queue_due', 'queue_new', 'queue_recent', 'queue_all',
     'reset_progress', 'reset_progress_confirm_title', 'reset_progress_confirm_msg',
     'reset_progress_btn', 'reset_progress_cancel', 'reset_progress_done',
     'progress_label', 'progress_aria',

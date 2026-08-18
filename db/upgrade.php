@@ -123,5 +123,66 @@ function xmldb_adaptivereview_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026070701, 'adaptivereview');
     }
 
+    if ($oldversion < 2026081800) {
+        $table = new xmldb_table('adaptivereview_sessions');
+
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('adaptivereviewid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('sessionkey', XMLDB_TYPE_CHAR, '64', null, XMLDB_NOTNULL);
+        $table->add_field('mode', XMLDB_TYPE_CHAR, '16', null, XMLDB_NOTNULL);
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timecompleted', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('adaptivereviewid', XMLDB_KEY_FOREIGN, ['adaptivereviewid'], 'adaptivereview', ['id']);
+
+        $table->add_index('sessionkey', XMLDB_INDEX_UNIQUE, ['sessionkey']);
+        $table->add_index('userid', XMLDB_INDEX_NOTUNIQUE, ['userid']);
+        $table->add_index('adaptivereviewid_userid', XMLDB_INDEX_NOTUNIQUE, ['adaptivereviewid', 'userid']);
+
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        $table = new xmldb_table('adaptivereview_attempts');
+
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('sessionid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('itemid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('attemptnumber', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, '1');
+        $table->add_field('response', XMLDB_TYPE_CHAR, '16', null, XMLDB_NOTNULL);
+        $table->add_field('wasdue', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('isremediation', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('masteryeligible', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('masterybefore', XMLDB_TYPE_NUMBER, '5,2', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('masterygain', XMLDB_TYPE_NUMBER, '5,2', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('masteryafter', XMLDB_TYPE_NUMBER, '5,2', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('intervalbefore', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('intervalafter', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('previousreviewdate', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('previousduedate', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('nextreviewdate', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('algorithmversion', XMLDB_TYPE_CHAR, '32', null, XMLDB_NOTNULL);
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('sessionid', XMLDB_KEY_FOREIGN, ['sessionid'], 'adaptivereview_sessions', ['id']);
+        $table->add_key('itemid', XMLDB_KEY_FOREIGN, ['itemid'], 'adaptivereview_items', ['id']);
+
+        $table->add_index('sessionid_itemid_attempt', XMLDB_INDEX_UNIQUE, ['sessionid', 'itemid', 'attemptnumber']);
+        $table->add_index('timecreated', XMLDB_INDEX_NOTUNIQUE, ['timecreated']);
+
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Prototype scores were produced by rules that conflict with the approved
+        // mastery model. Start the evidence-backed engine from a clean summary.
+        $DB->delete_records('adaptivereview_mastery');
+
+        upgrade_mod_savepoint(true, 2026081800, 'adaptivereview');
+    }
+
     return true;
 }

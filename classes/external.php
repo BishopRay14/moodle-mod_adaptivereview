@@ -31,7 +31,7 @@ use external_value;
 use external_single_structure;
 use external_multiple_structure;
 
-use mod_adaptivereview\local\scheduler;
+use mod_adaptivereview\local\review_manager;
 
 class external extends external_api {
 
@@ -73,7 +73,6 @@ class external extends external_api {
                  ON c.id = p.itemid
               WHERE c.adaptivereviewid = :instanceid
                 AND p.userid = :userid
-                AND p.lastreviewdate > 0
                 AND p.nextreviewdate > 0
                 AND p.nextreviewdate <= :now",
             [
@@ -181,7 +180,6 @@ class external extends external_api {
                         ON c.id = p.itemid
                     WHERE c.adaptivereviewid = :instanceid
                     AND p.userid = :userid
-                    AND p.lastreviewdate > 0
                     AND p.nextreviewdate > 0
                     AND p.nextreviewdate <= :now
                     $order_by";
@@ -281,19 +279,75 @@ class external extends external_api {
         );
     }
 
-    public static function submit_answer_parameters() {
+    public static function start_review_session_parameters() {
         return new external_function_parameters([
-            'cardid' => new external_value(PARAM_INT, 'The card ID'),
-            'rating' => new external_value(PARAM_INT, 'Rating 0=Red, 1=Yellow, 2=Green'),
+            'instanceid' => new external_value(PARAM_INT, 'The Adaptive Review instance ID'),
+            'mode' => new external_value(PARAM_ALPHA, 'Review mode: due, new, or early'),
         ]);
     }
 
-    public static function submit_answer($cardid, $rating) {
+    public static function start_review_session($instanceid, $mode) {
+        global $USER;
+
+        $params = self::validate_parameters(self::start_review_session_parameters(), [
+            'instanceid' => $instanceid,
+            'mode' => $mode,
+        ]);
+
+        $cm = get_coursemodule_from_instance('adaptivereview', $params['instanceid'], 0, false, MUST_EXIST);
+        $context = \context_module::instance($cm->id);
+        self::validate_context($context);
+        require_capability('mod/adaptivereview:view', $context);
+
+        $session = review_manager::start_session($params['instanceid'], $USER->id, $params['mode']);
+
+        return ['sessionkey' => $session->sessionkey];
+    }
+
+    public static function start_review_session_returns() {
+        return new external_single_structure([
+            'sessionkey' => new external_value(PARAM_ALPHANUM, 'Opaque review session key'),
+        ]);
+    }
+
+    public static function complete_review_session_parameters() {
+        return new external_function_parameters([
+            'sessionkey' => new external_value(PARAM_ALPHANUM, 'Opaque review session key'),
+        ]);
+    }
+
+    public static function complete_review_session($sessionkey) {
+        global $USER;
+
+        $params = self::validate_parameters(self::complete_review_session_parameters(), [
+            'sessionkey' => $sessionkey,
+        ]);
+        review_manager::complete_session($params['sessionkey'], $USER->id);
+
+        return ['success' => true];
+    }
+
+    public static function complete_review_session_returns() {
+        return new external_single_structure([
+            'success' => new external_value(PARAM_BOOL, 'Success indicator'),
+        ]);
+    }
+
+    public static function submit_answer_parameters() {
+        return new external_function_parameters([
+            'cardid' => new external_value(PARAM_INT, 'The card ID'),
+            'response' => new external_value(PARAM_ALPHA, 'Learner response: know or notyet'),
+            'sessionkey' => new external_value(PARAM_ALPHANUM, 'Opaque review session key'),
+        ]);
+    }
+
+    public static function submit_answer($cardid, $response, $sessionkey) {
         global $DB, $USER;
 
         $params = self::validate_parameters(self::submit_answer_parameters(), [
             'cardid' => $cardid,
-            'rating' => $rating
+            'response' => $response,
+            'sessionkey' => $sessionkey,
         ]);
 
         $card = $DB->get_record('adaptivereview_items', ['id' => $params['cardid']], '*', MUST_EXIST);
@@ -308,47 +362,34 @@ class external extends external_api {
         self::validate_context($context);
         require_capability('mod/adaptivereview:view', $context);
 
-        $userid = $USER->id;
-        $progress = $DB->get_record('adaptivereview_mastery', [
-            'userid' => $userid,
-            'itemid' => $card->id
-        ]);
-
-        if (!$progress) {
-            $progress = new \stdClass();
-            $progress->userid = $userid;
-            $progress->itemid = $card->id;
-            $progress->box_number = 0;
-            $progress->status = 0;
-            $progress->count_correct = 0;
-            $progress->count_wrong = 0;
-            $progress->last_reviewed = 0;
-            $progress->masteryscore = 0.0;
-            $progress->requiredintervaldays = 1;
-            $progress->nextreviewdate = 0;
-            $progress->lastreviewdate = 0;
-            $progress->id = $DB->insert_record('adaptivereview_mastery', $progress);
-        }
-
-        $progress = scheduler::process_review($progress, $params['rating']);
-
-        $DB->update_record('adaptivereview_mastery', $progress);
+        $session = review_manager::get_active_session($params['sessionkey'], $USER->id);
+        $attempt = review_manager::record_attempt($session, $card, $params['response']);
 
         $completion = new \completion_info($course);
         if ($completion->is_enabled($cm) && $cm->completion == COMPLETION_TRACKING_AUTOMATIC) {
-            $completion->update_state($cm, COMPLETION_UNKNOWN, $userid);
+            $completion->update_state($cm, COMPLETION_UNKNOWN, $USER->id);
         }
 
         return [
             'success' => true,
-            'new_box' => $progress->box_number,
+            'attemptnumber' => $attempt->attemptnumber,
+            'masteryeligible' => (bool) $attempt->masteryeligible,
+            'masterybefore' => (float) $attempt->masterybefore,
+            'masterygain' => (float) $attempt->masterygain,
+            'masteryafter' => (float) $attempt->masteryafter,
+            'nextreviewdate' => (int) $attempt->nextreviewdate,
         ];
     }
 
     public static function submit_answer_returns() {
         return new external_single_structure([
             'success' => new external_value(PARAM_BOOL, 'Success indicator'),
-            'new_box' => new external_value(PARAM_INT, 'The new review category for this card'),
+            'attemptnumber' => new external_value(PARAM_INT, 'Attempt number for this card in the session'),
+            'masteryeligible' => new external_value(PARAM_BOOL, 'Whether the attempt may affect mastery'),
+            'masterybefore' => new external_value(PARAM_FLOAT, 'Mastery before the attempt'),
+            'masterygain' => new external_value(PARAM_FLOAT, 'Mastery gain applied'),
+            'masteryafter' => new external_value(PARAM_FLOAT, 'Mastery after the attempt'),
+            'nextreviewdate' => new external_value(PARAM_INT, 'Resulting next review timestamp'),
         ]);
     }
 

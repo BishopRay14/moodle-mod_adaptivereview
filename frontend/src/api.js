@@ -48,10 +48,25 @@ export const getBoxCounts = async () => {
     return result;
 };
 
-export const submitAnswer = (cardid, rating) => {
+export const startReviewSession = async (mode) => {
+    const result = await moodleCall('mod_adaptivereview_start_review_session', {
+        instanceid: config.instanceid,
+        mode
+    });
+    return result.sessionkey;
+};
+
+export const completeReviewSession = (sessionkey) => {
+    return moodleCall('mod_adaptivereview_complete_review_session', {
+        sessionkey
+    });
+};
+
+export const submitAnswer = (cardid, response, sessionkey) => {
     return moodleCall('mod_adaptivereview_submit_answer', {
         cardid,
-        rating
+        response,
+        sessionkey
     });
 };
 

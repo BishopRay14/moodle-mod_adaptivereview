@@ -68,6 +68,7 @@ function mod_adaptivereview_auto_delete_demos($adaptivereviewid) {
     );
     if (!empty($demo_ids)) {
         list($in, $params) = $DB->get_in_or_equal($demo_ids);
+        $DB->delete_records_select('adaptivereview_attempts', "itemid $in", $params);
         $DB->delete_records_select('adaptivereview_mastery', "itemid $in", $params);
         $DB->delete_records_select('adaptivereview_items', "id $in", $params);
     }
@@ -78,8 +79,12 @@ function mod_adaptivereview_auto_delete_demos($adaptivereviewid) {
 // =========================================================
 
 if ($action === 'delete' && $cardid && confirm_sesskey()) {
-    $DB->delete_records('adaptivereview_mastery', ['itemid' => $cardid]);
-    $DB->delete_records('adaptivereview_items', ['id' => $cardid, 'adaptivereviewid' => $adaptivereview->id]);
+    $cardparams = ['id' => $cardid, 'adaptivereviewid' => $adaptivereview->id];
+    if ($DB->record_exists('adaptivereview_items', $cardparams)) {
+        $DB->delete_records('adaptivereview_attempts', ['itemid' => $cardid]);
+        $DB->delete_records('adaptivereview_mastery', ['itemid' => $cardid]);
+        $DB->delete_records('adaptivereview_items', $cardparams);
+    }
     redirect(new moodle_url('/mod/adaptivereview/manage.php', ['id' => $cm->id]),
         get_string('carddeleted', 'mod_adaptivereview'));
 }
@@ -97,6 +102,7 @@ if ($action === 'bulkdelete' && data_submitted() && confirm_sesskey()) {
         if (!empty($valid_cards)) {
             $deleted_count = count($valid_cards);
             list($in_valid, $params_valid) = $DB->get_in_or_equal($valid_cards);
+            $DB->delete_records_select('adaptivereview_attempts', "itemid $in_valid", $params_valid);
             $DB->delete_records_select('adaptivereview_mastery', "itemid $in_valid", $params_valid);
             $DB->delete_records_select('adaptivereview_items', "id $in_valid", $params_valid);
         }

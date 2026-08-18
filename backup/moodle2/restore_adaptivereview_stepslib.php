@@ -33,6 +33,11 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
         
         if ($userinfo) {
             $paths[] = new restore_path_element('adaptivereview_mastery', '/activity/adaptivereview/items/item/masteries/mastery');
+            $paths[] = new restore_path_element('adaptivereview_session', '/activity/adaptivereview/sessions/session');
+            $paths[] = new restore_path_element(
+                'adaptivereview_attempt',
+                '/activity/adaptivereview/sessions/session/attempts/attempt'
+            );
         }
 
         return $this->prepare_activity_structure($paths);
@@ -79,9 +84,51 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
         }
 
         $data->itemid = $this->get_new_parentid('adaptivereview_items');
+        $data->last_reviewed = $this->apply_date_offset($data->last_reviewed);
+        $data->nextreviewdate = $this->apply_date_offset($data->nextreviewdate);
+        $data->lastreviewdate = $this->apply_date_offset($data->lastreviewdate);
         
         $newitemid = $DB->insert_record('adaptivereview_mastery', $data);
         $this->set_mapping('adaptivereview_mastery', $oldid, $newitemid);
+    }
+
+    protected function process_adaptivereview_session($data) {
+        global $DB;
+
+        $data = (object) $data;
+        $oldid = $data->id;
+        $data->adaptivereviewid = $this->get_new_parentid('adaptivereview');
+        $data->userid = $this->get_mappingid('user', $data->userid);
+        if (!$data->userid) {
+            return;
+        }
+
+        $data->sessionkey = bin2hex(random_bytes(32));
+        $data->timecreated = $this->apply_date_offset($data->timecreated);
+        $data->timecompleted = $this->apply_date_offset($data->timecompleted);
+
+        $newsessionid = $DB->insert_record('adaptivereview_sessions', $data);
+        $this->set_mapping('adaptivereview_sessions', $oldid, $newsessionid);
+    }
+
+    protected function process_adaptivereview_attempt($data) {
+        global $DB;
+
+        $data = (object) $data;
+        $oldid = $data->id;
+        $data->sessionid = $this->get_new_parentid('adaptivereview_sessions');
+        $data->itemid = $this->get_mappingid('adaptivereview_items', $data->itemid);
+        if (!$data->sessionid || !$data->itemid) {
+            return;
+        }
+
+        $data->previousreviewdate = $this->apply_date_offset($data->previousreviewdate);
+        $data->previousduedate = $this->apply_date_offset($data->previousduedate);
+        $data->nextreviewdate = $this->apply_date_offset($data->nextreviewdate);
+        $data->timecreated = $this->apply_date_offset($data->timecreated);
+
+        $newattemptid = $DB->insert_record('adaptivereview_attempts', $data);
+        $this->set_mapping('adaptivereview_attempts', $oldid, $newattemptid);
     }
 
     protected function after_execute() {
