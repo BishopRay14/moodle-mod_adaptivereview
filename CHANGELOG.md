@@ -2,6 +2,17 @@
 
 Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [Unreleased] - Global Repository MVP Test Foundation
+
+### Added
+- Added the global repository MVP roadmap and migration acceptance contract.
+- Added an automated legacy-data fixture covering activities, duplicate card text, mastery, sessions, and attempts.
+- Documented the isolated local PHPUnit workflow.
+
+### Changed
+- Raised the declared minimum to Moodle 5.0, matching the project's supported platform.
+- Updated CI coverage to Moodle 5.0, 5.2, and 5.3 with supported PHP and PostgreSQL versions.
+
 ## [0.2.0-prototype] - 2026-08-18 (Persistent Review History Foundation)
 
 ### Added

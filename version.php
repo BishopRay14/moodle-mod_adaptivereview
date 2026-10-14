@@ -42,7 +42,7 @@ defined('MOODLE_INTERNAL') || die();
  */
 
 $plugin->version   = 2026081800; // The current module version (Date: YYYYMMDDXX).
-$plugin->requires  = 2022112800; // Requires Moodle 4.1 (LTS).
+$plugin->requires  = 2025041400; // Requires Moodle 5.0.
 $plugin->component = 'mod_adaptivereview'; // Full name of the plugin (used for diagnostics).
 $plugin->maturity  = MATURITY_ALPHA;
 $plugin->release   = '0.2.0-prototype';

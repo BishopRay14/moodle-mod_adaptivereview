@@ -35,7 +35,7 @@ The long-term vision includes:
 
 ## Technology
 
-- Moodle 5.x
+- Moodle 5.0 or later
 - PHP
 - Vue 3
 - Tailwind CSS
@@ -54,6 +54,28 @@ The long-term vision includes:
 3. Complete the upgrade process.
 
 4. Configure the activity inside a Moodle course.
+
+## Testing
+
+The automated suite uses Moodle's isolated PHPUnit prefix and dataroot. It must
+never use the live `m_` table prefix or `/var/www/moodledata` directory.
+
+For this Moodle Docker checkout, initialize and run the plugin suite from the
+webserver container:
+
+```bash
+cd /var/www/html
+composer install --no-interaction
+php public/admin/tool/phpunit/cli/init.php --disable-composer
+vendor/bin/phpunit --testsuite mod_adaptivereview_testsuite
+```
+
+The local `config.php` must define a non-production `$CFG->phpunit_prefix` and
+`$CFG->phpunit_dataroot`. The current Docker configuration uses `t_` and
+`/var/www/phpunitdata` respectively.
+
+The GitHub Actions matrix covers the minimum Moodle 5.0 release and current
+Moodle 5.2 and 5.3 lines on supported PHP and PostgreSQL versions.
 
 ## Current Status
 

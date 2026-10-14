@@ -23,15 +23,21 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+namespace mod_adaptivereview;
 
-global $CFG;
-require_once($CFG->dirroot . '/mod/adaptivereview/lib.php');
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Library unit tests for mod_adaptivereview.
  */
-class mod_adaptivereview_lib_testcase extends advanced_testcase {
+final class lib_test extends \advanced_testcase {
+
+    public static function setUpBeforeClass(): void {
+        global $CFG;
+
+        require_once($CFG->dirroot . '/mod/adaptivereview/lib.php');
+        parent::setUpBeforeClass();
+    }
 
     public function setUp(): void {
         $this->resetAfterTest();
@@ -71,7 +77,16 @@ class mod_adaptivereview_lib_testcase extends advanced_testcase {
         $this->assertEquals('Updated Adaptive Review Name', $updated->name);
 
         // Create retained review history so deletion covers every user-data table.
-        $card = $DB->get_record('adaptivereview_items', ['adaptivereviewid' => $module->id], '*', MUST_EXIST);
+        $cards = $DB->get_records(
+            'adaptivereview_items',
+            ['adaptivereviewid' => $module->id],
+            'id ASC',
+            '*',
+            0,
+            1
+        );
+        $card = reset($cards);
+        $this->assertNotFalse($card);
         $session = \mod_adaptivereview\local\review_manager::start_session(
             (int) $module->id,
             (int) get_admin()->id,

@@ -25,20 +25,15 @@
 
 namespace mod_adaptivereview\external;
 
-use external_api;
-use externallib_advanced_testcase;
+use core_external\external_api;
 use mod_adaptivereview\external;
 
 defined('MOODLE_INTERNAL') || die();
 
-global $CFG;
-require_once($CFG->dirroot . '/webservice/tests/helpers.php');
-require_once($CFG->dirroot . '/mod/adaptivereview/classes/external.php');
-
 /**
  * External functions unit tests for mod_adaptivereview.
  */
-class external_test extends externallib_advanced_testcase {
+final class external_test extends \core_external\tests\externallib_testcase {
 
     /**
      * Set up for every test
