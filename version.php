@@ -41,8 +41,8 @@ defined('MOODLE_INTERNAL') || die();
  * EVERY release must be officially block-documented in CHANGELOG.md!
  */
 
-$plugin->version   = 2026101400; // The current module version (Date: YYYYMMDDXX).
+$plugin->version   = 2026101500; // The current module version (Date: YYYYMMDDXX).
 $plugin->requires  = 2025041400; // Requires Moodle 5.0.
 $plugin->component = 'mod_adaptivereview'; // Full name of the plugin (used for diagnostics).
 $plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = '0.3.0-prototype';
+$plugin->release   = '0.4.0-prototype';

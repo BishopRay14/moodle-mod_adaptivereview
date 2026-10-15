@@ -125,10 +125,10 @@ final class external_test extends \core_external\tests\externallib_testcase {
         $this->assertTrue($result['success']);
         $this->assertEquals(1, $result['attemptnumber']);
         $this->assertTrue($result['masteryeligible']);
-        $this->assertEquals(0.0, $result['masterygain']);
+        $this->assertEquals(0.5, $result['masterygain']);
 
         $progress = $DB->get_record('adaptivereview_mastery', ['userid' => $student->id, 'cardid' => $card->id]);
-        $this->assertEquals(0.0, $progress->masteryscore);
+        $this->assertEquals(0.5, $progress->masteryscore);
         $this->assertEquals(1, $progress->count_correct);
         $this->assertGreaterThan(time(), $progress->nextreviewdate);
 
@@ -140,7 +140,7 @@ final class external_test extends \core_external\tests\externallib_testcase {
         $this->assertFalse($result['masteryeligible']);
 
         $progress = $DB->get_record('adaptivereview_mastery', ['userid' => $student->id, 'cardid' => $card->id]);
-        $this->assertEquals(0.0, $progress->masteryscore);
+        $this->assertEquals(0.5, $progress->masteryscore);
         $this->assertEquals($nextreviewdate, $progress->nextreviewdate);
         $this->assertEquals(2, $DB->count_records('adaptivereview_attempts', ['cardid' => $card->id]));
 

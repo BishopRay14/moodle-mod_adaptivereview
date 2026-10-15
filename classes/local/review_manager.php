@@ -34,8 +34,20 @@ class review_manager {
     /** @var string Unsuccessful retrieval response. */
     public const RESPONSE_NOTYET = 'notyet';
 
-    /** @var string History-only compatibility behavior identifier. */
-    public const ALGORITHM_VERSION = 'history-v1';
+    /** @var string Mastery scheduler behavior identifier. */
+    public const ALGORITHM_VERSION = 'mastery-v1';
+
+    /** @var float Maximum lifelong mastery score. */
+    public const MAX_MASTERY = 5.9;
+
+    /** @var float Full gain for a successful scheduled review. */
+    public const FULL_REVIEW_GAIN = 0.5;
+
+    /** @var int Stored mastery precision. */
+    private const MASTERY_PRECISION = 3;
+
+    /** @var int Each failed review shortens the active interval by this factor. */
+    private const RECOVERY_DIVISOR = 3;
 
     /** @var int Open sessions expire after eight hours. */
     private const SESSION_LIFETIME = 8 * 60 * 60;
@@ -141,11 +153,62 @@ class review_manager {
     }
 
     /**
-     * Record one retrieval attempt and conservatively update summary scheduling.
+     * Return the required interval for a mastery score.
      *
-     * The approved mastery formula has not been selected. This history-only
-     * implementation never changes mastery. Eligible first attempts receive a
-     * one-day follow-up schedule so cards remain available for later engine work.
+     * @param float $mastery Mastery score.
+     * @return int Required interval in days.
+     */
+    public static function required_interval_days(float $mastery): int {
+        if ($mastery < 2.0) {
+            return 1;
+        }
+        if ($mastery < 3.0) {
+            return 5;
+        }
+        if ($mastery < 4.0) {
+            return 21;
+        }
+        if ($mastery < 5.0) {
+            return 90;
+        }
+
+        return 270;
+    }
+
+    /**
+     * Calculate a successful review gain from elapsed retention time.
+     *
+     * @param int $elapsedseconds Seconds since the prior attempt.
+     * @param int $requiredintervaldays Mastery-based interval in days.
+     * @return float Mastery gain capped at the full scheduled gain.
+     */
+    public static function elapsed_mastery_gain(int $elapsedseconds, int $requiredintervaldays): float {
+        $requiredseconds = max(1, $requiredintervaldays) * DAYSECS;
+        $retentionratio = max(0.0, $elapsedseconds / $requiredseconds);
+
+        return round(
+            min(self::FULL_REVIEW_GAIN, self::FULL_REVIEW_GAIN * $retentionratio),
+            self::MASTERY_PRECISION
+        );
+    }
+
+    /**
+     * Return the next recovery interval after an unsuccessful review.
+     *
+     * @param int $requiredintervaldays Mastery-based interval in days.
+     * @param int $activeintervaldays Current regular or recovery interval in days.
+     * @return int Shorter recovery interval in days.
+     */
+    public static function recovery_interval_days(int $requiredintervaldays, int $activeintervaldays): int {
+        $basis = min(max(1, $requiredintervaldays), max(1, $activeintervaldays));
+        return max(1, (int) ceil($basis / self::RECOVERY_DIVISOR));
+    }
+
+    /**
+     * Record one retrieval attempt and update mastery-v1 scheduling.
+     *
+     * First attempts in a matching New, Due, or early-practice session may
+     * update summary state. Same-session remediation remains history-only.
      *
      * @param stdClass $session Active review session.
      * @param stdClass $item Global repository card.
@@ -187,17 +250,26 @@ class review_manager {
         ]);
         $isnew = !$mastery;
 
-        $masterybefore = $mastery ? (float) $mastery->masteryscore : 0.0;
-        $intervalbefore = $mastery ? (int) $mastery->requiredintervaldays : 0;
+        $masterybefore = $mastery
+            ? min(self::MAX_MASTERY, max(0.0, (float) $mastery->masteryscore))
+            : 0.0;
+        $intervalbefore = self::required_interval_days($masterybefore);
+        $previousattemptdate = $mastery ? (int) $mastery->last_reviewed : 0;
         $previousreviewdate = $mastery ? (int) $mastery->lastreviewdate : 0;
         $previousduedate = $mastery ? (int) $mastery->nextreviewdate : 0;
         $wasdue = !$isnew && $previousduedate > 0 && $previousduedate <= (int) $session->timecreated;
 
         $validfirstattempt = !$isremediation && (
             ($session->mode === self::MODE_NEW && $isnew) ||
-            ($session->mode === self::MODE_DUE && $wasdue)
+            ($session->mode === self::MODE_DUE && $wasdue) ||
+            ($session->mode === self::MODE_EARLY && !$isnew && !$wasdue)
         );
         $masteryeligible = $validfirstattempt && $response === self::RESPONSE_KNOW;
+        $masterygain = 0.0;
+        $masteryafter = $masterybefore;
+        $intervalafter = $mastery
+            ? self::active_interval_days($previousattemptdate, $previousduedate, $intervalbefore)
+            : 0;
 
         if ($validfirstattempt) {
             if (!$mastery) {
@@ -205,13 +277,40 @@ class review_manager {
             }
 
             $mastery->last_reviewed = $now;
-            $mastery->requiredintervaldays = 1;
-            $mastery->nextreviewdate = $now + DAYSECS;
 
             if ($response === self::RESPONSE_KNOW) {
+                if ($isnew) {
+                    $masterygain = self::FULL_REVIEW_GAIN;
+                } else {
+                    $gainanchor = $previousattemptdate ?: $previousreviewdate;
+                    $elapsedseconds = $gainanchor > 0 ? max(0, $now - $gainanchor) : 0;
+                    $masterygain = self::elapsed_mastery_gain($elapsedseconds, $intervalbefore);
+                }
+
+                $masteryafter = round(
+                    min(self::MAX_MASTERY, $masterybefore + $masterygain),
+                    self::MASTERY_PRECISION
+                );
+                $masterygain = round($masteryafter - $masterybefore, self::MASTERY_PRECISION);
+                $intervalafter = self::required_interval_days($masteryafter);
+
+                $mastery->masteryscore = $masteryafter;
+                $mastery->box_number = min(5, (int) floor($masteryafter));
+                $mastery->requiredintervaldays = $intervalafter;
+                $mastery->nextreviewdate = $now + ($intervalafter * DAYSECS);
                 $mastery->count_correct++;
                 $mastery->lastreviewdate = $now;
             } else {
+                $activeinterval = self::active_interval_days(
+                    $previousattemptdate,
+                    $previousduedate,
+                    $intervalbefore
+                );
+                $intervalafter = self::recovery_interval_days($intervalbefore, $activeinterval);
+
+                $mastery->masteryscore = $masterybefore;
+                $mastery->requiredintervaldays = $intervalbefore;
+                $mastery->nextreviewdate = $now + ($intervalafter * DAYSECS);
                 $mastery->count_wrong++;
             }
 
@@ -231,10 +330,10 @@ class review_manager {
             'isremediation' => (int) $isremediation,
             'masteryeligible' => (int) $masteryeligible,
             'masterybefore' => $masterybefore,
-            'masterygain' => 0.0,
-            'masteryafter' => $masterybefore,
+            'masterygain' => $masterygain,
+            'masteryafter' => $masteryafter,
             'intervalbefore' => $intervalbefore,
-            'intervalafter' => $mastery ? (int) $mastery->requiredintervaldays : $intervalbefore,
+            'intervalafter' => $intervalafter,
             'previousreviewdate' => $previousreviewdate,
             'previousduedate' => $previousduedate,
             'nextreviewdate' => $mastery ? (int) $mastery->nextreviewdate : $previousduedate,
@@ -245,6 +344,26 @@ class review_manager {
 
         $transaction->allow_commit();
         return $attempt;
+    }
+
+    /**
+     * Resolve the active regular or recovery interval from summary dates.
+     *
+     * @param int $lastattemptdate Last summary-changing attempt timestamp.
+     * @param int $nextreviewdate Current due timestamp.
+     * @param int $fallbackdays Mastery-based interval when dates are unavailable.
+     * @return int Active interval in days.
+     */
+    private static function active_interval_days(
+        int $lastattemptdate,
+        int $nextreviewdate,
+        int $fallbackdays
+    ): int {
+        if ($lastattemptdate > 0 && $nextreviewdate > $lastattemptdate) {
+            return max(1, (int) ceil(($nextreviewdate - $lastattemptdate) / DAYSECS));
+        }
+
+        return max(1, $fallbackdays);
     }
 
     /**

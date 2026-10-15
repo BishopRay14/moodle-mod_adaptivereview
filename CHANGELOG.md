@@ -12,6 +12,9 @@ Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokument
 - Added an activity-specific Set Mastery goal and global repository management capability.
 - Added a migration rehearsal that preserves card, mastery, session, and attempt identities.
 - Added shared-card coverage proving that mastery follows the student-card pair across activities.
+- Added the `mastery-v1` scheduler with mastery-based intervals of 1, 5, 21, 90, and 270 days.
+- Added proportional early-review and recovery-review gains, capped at `+0.5` per successful review.
+- Added deterministic scheduler coverage for boundaries, early and late review, recovery, repeated failure, and the 5.9 cap.
 
 ### Changed
 - Raised the declared minimum to Moodle 5.0, matching the project's supported platform.
@@ -20,6 +23,8 @@ Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokument
 - Renamed mastery and attempt references from `itemid` to stable global `cardid` references.
 - Updated student review, completion, management, privacy, and backup/restore paths for repository-backed cards.
 - Restores create an isolated imported set rather than matching unrelated content by text.
+- Incorrect responses preserve mastery and progressively shorten only the active recovery interval.
+- Increased stored mastery precision to three decimal places while retaining one-decimal display values.
 
 ## [0.2.0-prototype] - 2026-08-18 (Persistent Review History Foundation)
 

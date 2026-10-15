@@ -334,5 +334,29 @@ function xmldb_adaptivereview_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026101400, 'adaptivereview');
     }
 
+    if ($oldversion < 2026101500) {
+        $masterytable = new xmldb_table('adaptivereview_mastery');
+        $attempttable = new xmldb_table('adaptivereview_attempts');
+
+        $field = new xmldb_field(
+            'masteryscore',
+            XMLDB_TYPE_NUMBER,
+            '5,3',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '0',
+            'last_reviewed'
+        );
+        $dbman->change_field_precision($masterytable, $field);
+
+        foreach (['masterybefore', 'masterygain', 'masteryafter'] as $fieldname) {
+            $field = new xmldb_field($fieldname, XMLDB_TYPE_NUMBER, '5,3', null, XMLDB_NOTNULL, null, '0');
+            $dbman->change_field_precision($attempttable, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026101500, 'adaptivereview');
+    }
+
     return true;
 }
