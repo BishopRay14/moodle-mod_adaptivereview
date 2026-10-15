@@ -25,7 +25,9 @@ final class review_manager_test extends \advanced_testcase {
     public function test_required_interval_boundaries(): void {
         $cases = [
             [0.0, 1],
-            [1.9, 1],
+            [0.9, 1],
+            [1.0, 3],
+            [1.9, 3],
             [2.0, 5],
             [2.9, 5],
             [3.0, 21],
@@ -39,6 +41,47 @@ final class review_manager_test extends \advanced_testcase {
         foreach ($cases as [$mastery, $expecteddays]) {
             $this->assertSame($expecteddays, review_manager::required_interval_days($mastery));
         }
+    }
+
+    /**
+     * Two successful new-card reviews move the card to a three-day interval.
+     */
+    public function test_second_success_moves_card_to_three_day_interval(): void {
+        [$student, $activity, $card] = $this->create_review_context();
+        $base = 750000;
+
+        $newsession = review_manager::start_session(
+            $activity->id,
+            $student->id,
+            review_manager::MODE_NEW,
+            $base
+        );
+        $firstattempt = review_manager::record_attempt(
+            $newsession,
+            $card,
+            review_manager::RESPONSE_KNOW,
+            $base
+        );
+        $this->assertEquals(0.5, (float) $firstattempt->masteryafter);
+        $this->assertEquals(1, $firstattempt->intervalafter);
+
+        $secondreviewtime = $base + DAYSECS;
+        $duesession = review_manager::start_session(
+            $activity->id,
+            $student->id,
+            review_manager::MODE_DUE,
+            $secondreviewtime
+        );
+        $secondattempt = review_manager::record_attempt(
+            $duesession,
+            $card,
+            review_manager::RESPONSE_KNOW,
+            $secondreviewtime
+        );
+
+        $this->assertEquals(1.0, (float) $secondattempt->masteryafter);
+        $this->assertEquals(3, $secondattempt->intervalafter);
+        $this->assertEquals($secondreviewtime + (3 * DAYSECS), $secondattempt->nextreviewdate);
     }
 
     /**

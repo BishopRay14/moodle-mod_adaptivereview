@@ -159,8 +159,11 @@ class review_manager {
      * @return int Required interval in days.
      */
     public static function required_interval_days(float $mastery): int {
-        if ($mastery < 2.0) {
+        if ($mastery < 1.0) {
             return 1;
+        }
+        if ($mastery < 2.0) {
+            return 3;
         }
         if ($mastery < 3.0) {
             return 5;
