@@ -27,13 +27,13 @@ class backup_adaptivereview_activity_structure_step extends backup_activity_stru
 
         // Define each element separated.
         $adaptivereview = new backup_nested_element('adaptivereview', ['id'], [
-            'course', 'name', 'intro', 'introformat', 'itemorder',
+            'course', 'name', 'intro', 'introformat', 'masterygoal', 'itemorder',
             'completion_min_items', 'completion_min_mastered', 'completion_all_mastered', 'timecreated', 'timemodified'
         ]);
 
         $items = new backup_nested_element('items');
         $item = new backup_nested_element('item', ['id'], [
-            'question', 'answer', 'hint', 'category'
+            'question', 'answer', 'hint', 'category', 'sortorder'
         ]);
 
         $masteries = new backup_nested_element('masteries');
@@ -48,7 +48,7 @@ class backup_adaptivereview_activity_structure_step extends backup_activity_stru
         ]);
         $attempts = new backup_nested_element('attempts');
         $attempt = new backup_nested_element('attempt', ['id'], [
-            'itemid', 'attemptnumber', 'response', 'wasdue', 'isremediation',
+            'cardid', 'attemptnumber', 'response', 'wasdue', 'isremediation',
             'masteryeligible', 'masterybefore', 'masterygain', 'masteryafter',
             'intervalbefore', 'intervalafter', 'previousreviewdate', 'previousduedate',
             'nextreviewdate', 'algorithmversion', 'timecreated'
@@ -67,11 +67,18 @@ class backup_adaptivereview_activity_structure_step extends backup_activity_stru
 
         // Define sources.
         $adaptivereview->set_source_table('adaptivereview', ['id' => backup::VAR_ACTIVITYID]);
-        $item->set_source_table('adaptivereview_items', ['adaptivereviewid' => backup::VAR_PARENTID]);
+        $item->set_source_sql(
+            "SELECT c.*, sc.sortorder
+               FROM {adaptivereview_cards} c
+               JOIN {adaptivereview_set_cards} sc ON sc.cardid = c.id
+               JOIN {adaptivereview} ar ON ar.setid = sc.setid
+              WHERE ar.id = ?",
+            [backup::VAR_ACTIVITYID]
+        );
 
         // Export user progress only if userinfo is included in the backup.
         if ($this->get_setting_value('userinfo')) {
-            $mastery->set_source_table('adaptivereview_mastery', ['itemid' => backup::VAR_PARENTID]);
+            $mastery->set_source_table('adaptivereview_mastery', ['cardid' => backup::VAR_PARENTID]);
             $session->set_source_table('adaptivereview_sessions', ['adaptivereviewid' => backup::VAR_PARENTID]);
             $attempt->set_source_table('adaptivereview_attempts', ['sessionid' => backup::VAR_PARENTID]);
         }

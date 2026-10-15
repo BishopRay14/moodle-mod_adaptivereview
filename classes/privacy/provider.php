@@ -39,7 +39,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
             'adaptivereview_mastery',
             [
                 'userid' => 'privacy:metadata:adaptivereview_mastery:userid',
-                'itemid' => 'privacy:metadata:adaptivereview_mastery:itemid',
+                'cardid' => 'privacy:metadata:adaptivereview_mastery:cardid',
                 'box_number' => 'privacy:metadata:adaptivereview_mastery:box_number',
                 'count_correct' => 'privacy:metadata:adaptivereview_mastery:count_correct',
                 'count_wrong' => 'privacy:metadata:adaptivereview_mastery:count_wrong',
@@ -67,7 +67,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
             'adaptivereview_attempts',
             [
                 'sessionid' => 'privacy:metadata:adaptivereview_attempts:sessionid',
-                'itemid' => 'privacy:metadata:adaptivereview_attempts:itemid',
+                'cardid' => 'privacy:metadata:adaptivereview_attempts:cardid',
                 'attemptnumber' => 'privacy:metadata:adaptivereview_attempts:attemptnumber',
                 'response' => 'privacy:metadata:adaptivereview_attempts:response',
                 'wasdue' => 'privacy:metadata:adaptivereview_attempts:wasdue',
@@ -96,8 +96,8 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
                   JOIN {course_modules} cm ON cm.id = c.instanceid AND c.contextlevel = :contextlevel
                   JOIN {modules} m ON m.name = :modname AND m.id = cm.module
                   JOIN {adaptivereview} r ON r.id = cm.instance
-                  JOIN {adaptivereview_items} rc ON rc.adaptivereviewid = r.id
-                  JOIN {adaptivereview_mastery} rp ON rp.itemid = rc.id
+                  JOIN {adaptivereview_set_cards} sc ON sc.setid = r.setid
+                  JOIN {adaptivereview_mastery} rp ON rp.cardid = sc.cardid
                  WHERE rp.userid = :userid";
         $params = [
             'modname' => 'adaptivereview',
@@ -126,8 +126,8 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
                   FROM {course_modules} cm
                   JOIN {modules} m ON m.name = :modname AND m.id = cm.module
                   JOIN {adaptivereview} r ON r.id = cm.instance
-                  JOIN {adaptivereview_items} rc ON rc.adaptivereviewid = r.id
-                  JOIN {adaptivereview_mastery} rp ON rp.itemid = rc.id
+                  JOIN {adaptivereview_set_cards} sc ON sc.setid = r.setid
+                  JOIN {adaptivereview_mastery} rp ON rp.cardid = sc.cardid
                  WHERE cm.id = :cmid";
         
         $params = [
@@ -161,8 +161,10 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
 
                 $sql = "SELECT rp.*, rc.question, rc.answer
                           FROM {adaptivereview_mastery} rp
-                          JOIN {adaptivereview_items} rc ON rc.id = rp.itemid
-                         WHERE rc.adaptivereviewid = ? AND rp.userid = ?";
+                          JOIN {adaptivereview_cards} rc ON rc.id = rp.cardid
+                          JOIN {adaptivereview_set_cards} sc ON sc.cardid = rc.id
+                          JOIN {adaptivereview} r ON r.setid = sc.setid
+                         WHERE r.id = ? AND rp.userid = ?";
                 $progress_records = $DB->get_records_sql($sql, [$cm->instance, $userid]);
 
                 if (!empty($progress_records)) {
@@ -213,7 +215,7 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
                 $sql = "SELECT a.*, s.mode, rc.question, rc.answer
                           FROM {adaptivereview_attempts} a
                           JOIN {adaptivereview_sessions} s ON s.id = a.sessionid
-                          JOIN {adaptivereview_items} rc ON rc.id = a.itemid
+                          JOIN {adaptivereview_cards} rc ON rc.id = a.cardid
                          WHERE s.adaptivereviewid = ? AND s.userid = ?
                       ORDER BY a.timecreated, a.id";
                 $attemptrecords = $DB->get_records_sql($sql, [$cm->instance, $userid]);
@@ -260,8 +262,9 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
         if ($cm = get_coursemodule_from_id('adaptivereview', $context->instanceid)) {
             $sql = "SELECT p.id 
                       FROM {adaptivereview_mastery} p
-                      JOIN {adaptivereview_items} c ON c.id = p.itemid
-                     WHERE c.adaptivereviewid = ?";
+                      JOIN {adaptivereview_set_cards} sc ON sc.cardid = p.cardid
+                      JOIN {adaptivereview} r ON r.setid = sc.setid
+                     WHERE r.id = ?";
             $DB->delete_records_select('adaptivereview_mastery', "id IN ($sql)", [$cm->instance]);
 
             $sessionids = $DB->get_fieldset_select(
@@ -289,8 +292,9 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
                 if ($cm = get_coursemodule_from_id('adaptivereview', $context->instanceid)) {
                     $sql = "SELECT p.id
                               FROM {adaptivereview_mastery} p
-                              JOIN {adaptivereview_items} c ON c.id = p.itemid
-                             WHERE c.adaptivereviewid = ? AND p.userid = ?";
+                              JOIN {adaptivereview_set_cards} sc ON sc.cardid = p.cardid
+                              JOIN {adaptivereview} r ON r.setid = sc.setid
+                             WHERE r.id = ? AND p.userid = ?";
                     $DB->delete_records_select('adaptivereview_mastery', "id IN ($sql)", [$cm->instance, $userid]);
 
                     $sessionids = $DB->get_fieldset_select(
@@ -325,8 +329,9 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
             
             $sql = "SELECT p.id 
                       FROM {adaptivereview_mastery} p
-                      JOIN {adaptivereview_items} c ON c.id = p.itemid
-                     WHERE c.adaptivereviewid = ? AND p.userid $insql";
+                      JOIN {adaptivereview_set_cards} sc ON sc.cardid = p.cardid
+                      JOIN {adaptivereview} r ON r.setid = sc.setid
+                     WHERE r.id = ? AND p.userid $insql";
             
             $params = array_merge([$cm->instance], $inparams);
             

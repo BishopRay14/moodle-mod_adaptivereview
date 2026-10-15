@@ -65,10 +65,13 @@ class external extends external_api {
 
         $count_due = $DB->count_records_sql(
             "SELECT COUNT(*)
-               FROM {adaptivereview_items} c
+               FROM {adaptivereview_cards} c
+               JOIN {adaptivereview_set_cards} sc ON sc.cardid = c.id
+               JOIN {adaptivereview} ar ON ar.setid = sc.setid
                JOIN {adaptivereview_mastery} p
-                 ON c.id = p.itemid
-              WHERE c.adaptivereviewid = :instanceid
+                 ON c.id = p.cardid
+              WHERE ar.id = :instanceid
+                AND c.archived = 0
                 AND p.userid = :userid
                 AND p.nextreviewdate > 0
                 AND p.nextreviewdate <= :now",
@@ -81,10 +84,13 @@ class external extends external_api {
 
         $count_new = $DB->count_records_sql(
             "SELECT COUNT(*)
-               FROM {adaptivereview_items} c
+               FROM {adaptivereview_cards} c
+               JOIN {adaptivereview_set_cards} sc ON sc.cardid = c.id
+               JOIN {adaptivereview} ar ON ar.setid = sc.setid
           LEFT JOIN {adaptivereview_mastery} p
-                 ON c.id = p.itemid AND p.userid = :userid
-              WHERE c.adaptivereviewid = :instanceid
+                 ON c.id = p.cardid AND p.userid = :userid
+              WHERE ar.id = :instanceid
+                AND c.archived = 0
                 AND p.id IS NULL",
             [
                 'instanceid' => $instanceid,
@@ -94,10 +100,13 @@ class external extends external_api {
 
         $count_recent = $DB->count_records_sql(
             "SELECT COUNT(*)
-               FROM {adaptivereview_items} c
+               FROM {adaptivereview_cards} c
+               JOIN {adaptivereview_set_cards} sc ON sc.cardid = c.id
+               JOIN {adaptivereview} ar ON ar.setid = sc.setid
                JOIN {adaptivereview_mastery} p
-                 ON c.id = p.itemid
-              WHERE c.adaptivereviewid = :instanceid
+                 ON c.id = p.cardid
+              WHERE ar.id = :instanceid
+                AND c.archived = 0
                 AND p.userid = :userid
                 AND p.lastreviewdate > 0
                 AND p.nextreviewdate > :now",
@@ -108,9 +117,14 @@ class external extends external_api {
             ]
         );
 
-        $count_all = $DB->count_records('adaptivereview_items', [
-            'adaptivereviewid' => $instanceid,
-        ]);
+        $count_all = $DB->count_records_sql(
+            "SELECT COUNT(*)
+               FROM {adaptivereview_set_cards} sc
+               JOIN {adaptivereview_cards} c ON c.id = sc.cardid
+               JOIN {adaptivereview} ar ON ar.setid = sc.setid
+              WHERE ar.id = :instanceid AND c.archived = 0",
+            ['instanceid' => $instanceid]
+        );
 
         return [
             ['box_number' => 0, 'count' => $count_due],
@@ -161,8 +175,9 @@ class external extends external_api {
         $instanceid = $params['instanceid'];
         $now = time();
 
-        $adaptivereview = $DB->get_record('adaptivereview', ['id' => $instanceid], 'itemorder', MUST_EXIST);
-        $order_by = ($adaptivereview->itemorder == 1) ? "ORDER BY c.id ASC" : "";
+        $adaptivereview = $DB->get_record('adaptivereview', ['id' => $instanceid],
+            'itemorder, setid', MUST_EXIST);
+        $order_by = ($adaptivereview->itemorder == 1) ? "ORDER BY sc.sortorder ASC, c.id ASC" : "";
 
         $select = "SELECT c.*,
                         COALESCE(p.masteryscore, 0) AS masteryscore,
@@ -172,10 +187,12 @@ class external extends external_api {
 
         if ($box == 0) {
             $sql = "$select
-                    FROM {adaptivereview_items} c
+                    FROM {adaptivereview_cards} c
+                    JOIN {adaptivereview_set_cards} sc ON sc.cardid = c.id
                     JOIN {adaptivereview_mastery} p
-                        ON c.id = p.itemid
-                    WHERE c.adaptivereviewid = :instanceid
+                        ON c.id = p.cardid
+                    WHERE sc.setid = :setid
+                    AND c.archived = 0
                     AND p.userid = :userid
                     AND p.nextreviewdate > 0
                     AND p.nextreviewdate <= :now
@@ -183,30 +200,34 @@ class external extends external_api {
 
             $cards = $DB->get_records_sql($sql, [
                 'userid' => $userid,
-                'instanceid' => $instanceid,
+                'setid' => $adaptivereview->setid,
                 'now' => $now,
             ]);
 
         } else if ($box == 1) {
             $sql = "$select
-                    FROM {adaptivereview_items} c
+                    FROM {adaptivereview_cards} c
+                    JOIN {adaptivereview_set_cards} sc ON sc.cardid = c.id
                 LEFT JOIN {adaptivereview_mastery} p
-                        ON c.id = p.itemid AND p.userid = :userid
-                    WHERE c.adaptivereviewid = :instanceid
+                        ON c.id = p.cardid AND p.userid = :userid
+                    WHERE sc.setid = :setid
+                    AND c.archived = 0
                     AND p.id IS NULL
                     $order_by";
 
             $cards = $DB->get_records_sql($sql, [
                 'userid' => $userid,
-                'instanceid' => $instanceid,
+                'setid' => $adaptivereview->setid,
             ]);
 
         } else if ($box == 2) {
             $sql = "$select
-                    FROM {adaptivereview_items} c
+                    FROM {adaptivereview_cards} c
+                    JOIN {adaptivereview_set_cards} sc ON sc.cardid = c.id
                     JOIN {adaptivereview_mastery} p
-                        ON c.id = p.itemid
-                    WHERE c.adaptivereviewid = :instanceid
+                        ON c.id = p.cardid
+                    WHERE sc.setid = :setid
+                    AND c.archived = 0
                     AND p.userid = :userid
                     AND p.lastreviewdate > 0
                     AND p.nextreviewdate > :now
@@ -214,21 +235,23 @@ class external extends external_api {
 
             $cards = $DB->get_records_sql($sql, [
                 'userid' => $userid,
-                'instanceid' => $instanceid,
+                'setid' => $adaptivereview->setid,
                 'now' => $now,
             ]);
 
         } else {
             $sql = "$select
-                    FROM {adaptivereview_items} c
+                    FROM {adaptivereview_cards} c
+                    JOIN {adaptivereview_set_cards} sc ON sc.cardid = c.id
                 LEFT JOIN {adaptivereview_mastery} p
-                        ON c.id = p.itemid AND p.userid = :userid
-                    WHERE c.adaptivereviewid = :instanceid
+                        ON c.id = p.cardid AND p.userid = :userid
+                    WHERE sc.setid = :setid
+                    AND c.archived = 0
                     $order_by";
 
             $cards = $DB->get_records_sql($sql, [
                 'userid' => $userid,
-                'instanceid' => $instanceid,
+                'setid' => $adaptivereview->setid,
             ]);
         }
 
@@ -347,8 +370,15 @@ class external extends external_api {
             'sessionkey' => $sessionkey,
         ]);
 
-        $card = $DB->get_record('adaptivereview_items', ['id' => $params['cardid']], '*', MUST_EXIST);
-        $adaptivereview = $DB->get_record('adaptivereview', ['id' => $card->adaptivereviewid], '*', MUST_EXIST);
+        $session = review_manager::get_active_session($params['sessionkey'], $USER->id);
+        $adaptivereview = $DB->get_record('adaptivereview', ['id' => $session->adaptivereviewid], '*', MUST_EXIST);
+        $card = $DB->get_record('adaptivereview_cards', ['id' => $params['cardid'], 'archived' => 0], '*', MUST_EXIST);
+        if (!$DB->record_exists('adaptivereview_set_cards', [
+                'setid' => $adaptivereview->setid,
+                'cardid' => $card->id,
+            ])) {
+            throw new \moodle_exception('invalidrecord');
+        }
         $course = $DB->get_record('course', ['id' => $adaptivereview->course], '*', MUST_EXIST);
 
         $cm_raw = get_coursemodule_from_instance('adaptivereview', $adaptivereview->id, $course->id, false, MUST_EXIST);
@@ -359,7 +389,6 @@ class external extends external_api {
         self::validate_context($context);
         require_capability('mod/adaptivereview:view', $context);
 
-        $session = review_manager::get_active_session($params['sessionkey'], $USER->id);
         $attempt = review_manager::record_attempt($session, $card, $params['response']);
 
         $completion = new \completion_info($course);
@@ -413,19 +442,15 @@ class external extends external_api {
         self::validate_context($context);
         require_capability('mod/adaptivereview:view', $context);
 
-        $cardids = $DB->get_fieldset_select(
-            'adaptivereview_items',
-            'id',
-            'adaptivereviewid = ?',
-            [$params['instanceid']]
-        );
+        $cardids = $DB->get_fieldset_select('adaptivereview_set_cards', 'cardid', 'setid = ?',
+            [$adaptivereview->setid]);
 
         $resetcount = 0;
 
         if (!empty($cardids)) {
             list($insql, $inparams) = $DB->get_in_or_equal($cardids, SQL_PARAMS_QM);
 
-            $select = "userid = ? AND itemid $insql";
+            $select = "userid = ? AND cardid $insql";
             $deleteparams = array_merge([$USER->id], $inparams);
 
             $resetcount = $DB->count_records_select('adaptivereview_mastery', $select, $deleteparams);

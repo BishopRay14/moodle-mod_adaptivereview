@@ -11,6 +11,9 @@ Current prototype includes:
 - Modern Vue 3 dashboard
 - Individual card mastery tracking
 - Persistent review-session and attempt history
+- Global card identities and reusable repository sets
+- Lifelong student-card mastery shared across course activities
+- Activity-specific Set Mastery goals
 - Set Mastery progress dashboard
 - Instructor-defined mastery goals
 - Searchable All Cards library
@@ -24,8 +27,6 @@ Current prototype includes:
 The long-term vision includes:
 
 - Time-based adaptive scheduling engine
-- Global card repository
-- Reusable card sets across multiple courses
 - Shared institutional content libraries
 - CSV import/export
 - Analytics dashboard
@@ -81,7 +82,10 @@ Moodle 5.2 and 5.3 lines on supported PHP and PostgreSQL versions.
 
 Adaptive Review is currently under active development.
 
-The current version demonstrates the user interface, mastery workflow, and activity structure. The adaptive scheduling engine is planned for a future development phase.
+The current version includes the global repository data foundation, stable card
+identities, reusable sets, migration coverage, and the existing mastery
+workflow. The instructor repository chooser and adaptive scheduling engine are
+the next development phases.
 
 ## License
 

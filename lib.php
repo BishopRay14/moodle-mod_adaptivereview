@@ -28,7 +28,24 @@ defined('MOODLE_INTERNAL') || die();
  * @return int The instance ID
  */
 function adaptivereview_add_instance($adaptivereview) {
-    global $DB;
+    global $DB, $USER;
+    $transaction = $DB->start_delegated_transaction();
+    $now = time();
+
+    $setid = $DB->insert_record('adaptivereview_sets', (object) [
+        'name' => $adaptivereview->name,
+        'description' => $adaptivereview->intro ?? '',
+        'descriptionformat' => $adaptivereview->introformat ?? FORMAT_HTML,
+        'defaultmasterygoal' => $adaptivereview->masterygoal ?? 4.0,
+        'archived' => 0,
+        'createdby' => $USER->id ?? 0,
+        'modifiedby' => $USER->id ?? 0,
+        'timecreated' => $now,
+        'timemodified' => $now,
+    ]);
+
+    $adaptivereview->setid = $setid;
+    $adaptivereview->masterygoal ??= 4.0;
     $adaptivereview->timecreated = time();
     $adaptivereview->timemodified = $adaptivereview->timecreated;
     $id = $DB->insert_record('adaptivereview', $adaptivereview);
@@ -44,10 +61,25 @@ function adaptivereview_add_instance($adaptivereview) {
         ['adaptivereviewid' => $id, 'category' => 'demo', 'question' => '##demo_q5##', 'answer' => '##demo_a5##', 'hint' => '##demo_h5##'],
     ];
 
-    foreach ($demo_cards as $card) {
-        $DB->insert_record('adaptivereview_items', (object)$card);
+    foreach ($demo_cards as $sortorder => $card) {
+        unset($card['adaptivereviewid']);
+        $card += [
+            'archived' => 0,
+            'createdby' => $USER->id ?? 0,
+            'modifiedby' => $USER->id ?? 0,
+            'timecreated' => $now,
+            'timemodified' => $now,
+        ];
+        $cardid = $DB->insert_record('adaptivereview_cards', (object) $card);
+        $DB->insert_record('adaptivereview_set_cards', (object) [
+            'setid' => $setid,
+            'cardid' => $cardid,
+            'sortorder' => $sortorder,
+            'timecreated' => $now,
+        ]);
     }
 
+    $transaction->allow_commit();
     return $id;
 }
 
@@ -76,16 +108,20 @@ function adaptivereview_delete_instance($id) {
         return false;
     }
     
-    $sql = "SELECT id FROM {adaptivereview_items} WHERE adaptivereviewid = ?";
-    if ($cards = $DB->get_records_sql($sql, [$id])) {
-        list($in, $params) = $DB->get_in_or_equal(array_keys($cards));
-        $DB->delete_records_select('adaptivereview_attempts', "itemid $in", $params);
-        $DB->delete_records_select('adaptivereview_mastery', "itemid $in", $params);
+    $sessionids = $DB->get_fieldset_select('adaptivereview_sessions', 'id', 'adaptivereviewid = ?', [$id]);
+    if ($sessionids) {
+        [$insql, $params] = $DB->get_in_or_equal($sessionids);
+        $DB->delete_records_select('adaptivereview_attempts', "sessionid $insql", $params);
     }
 
     $DB->delete_records('adaptivereview_sessions', ['adaptivereviewid' => $id]);
-    $DB->delete_records('adaptivereview_items', ['adaptivereviewid' => $id]);
     $DB->delete_records('adaptivereview', ['id' => $id]);
+
+    // Shared repository content and lifelong mastery must survive course deletion.
+    if (!$DB->record_exists('adaptivereview', ['setid' => $adaptivereview->setid])) {
+        $DB->set_field('adaptivereview_sets', 'archived', 1, ['id' => $adaptivereview->setid]);
+        $DB->set_field('adaptivereview_sets', 'timemodified', time(), ['id' => $adaptivereview->setid]);
+    }
     return true;
 }
 

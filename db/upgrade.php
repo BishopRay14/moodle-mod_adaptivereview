@@ -184,5 +184,155 @@ function xmldb_adaptivereview_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026081800, 'adaptivereview');
     }
 
+    if ($oldversion < 2026101400) {
+        $activitytable = new xmldb_table('adaptivereview');
+        $cardtable = new xmldb_table('adaptivereview_items');
+        $masterytable = new xmldb_table('adaptivereview_mastery');
+        $attempttable = new xmldb_table('adaptivereview_attempts');
+
+        $legacycardcount = $DB->count_records('adaptivereview_items');
+        $legacymasterycount = $DB->count_records('adaptivereview_mastery');
+        $legacyattemptcount = $DB->count_records('adaptivereview_attempts');
+
+        // Remove relationships whose referenced table or field is about to be renamed.
+        $key = new xmldb_key('itemid', XMLDB_KEY_FOREIGN, ['itemid'], 'adaptivereview_items', ['id']);
+        $dbman->drop_key($masterytable, $key);
+        $dbman->drop_key($attempttable, $key);
+
+        $index = new xmldb_index('userid_itemid', XMLDB_INDEX_UNIQUE, ['userid', 'itemid']);
+        if ($dbman->index_exists($masterytable, $index)) {
+            $dbman->drop_index($masterytable, $index);
+        }
+        $index = new xmldb_index('sessionid_itemid_attempt', XMLDB_INDEX_UNIQUE,
+            ['sessionid', 'itemid', 'attemptnumber']);
+        if ($dbman->index_exists($attempttable, $index)) {
+            $dbman->drop_index($attempttable, $index);
+        }
+
+        $key = new xmldb_key('adaptivereviewid', XMLDB_KEY_FOREIGN, ['adaptivereviewid'],
+            'adaptivereview', ['id']);
+        $dbman->drop_key($cardtable, $key);
+
+        $dbman->rename_table($cardtable, 'adaptivereview_cards');
+        $cardtable = new xmldb_table('adaptivereview_cards');
+
+        $repositoryfields = [
+            new xmldb_field('archived', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'category'),
+            new xmldb_field('createdby', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'archived'),
+            new xmldb_field('modifiedby', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'createdby'),
+            new xmldb_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'modifiedby'),
+            new xmldb_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'timecreated'),
+        ];
+        foreach ($repositoryfields as $field) {
+            if (!$dbman->field_exists($cardtable, $field)) {
+                $dbman->add_field($cardtable, $field);
+            }
+        }
+
+        $settable = new xmldb_table('adaptivereview_sets');
+        $settable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $settable->add_field('name', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL);
+        $settable->add_field('description', XMLDB_TYPE_TEXT, null, null, null);
+        $settable->add_field('descriptionformat', XMLDB_TYPE_INTEGER, '4', null, XMLDB_NOTNULL, null, '0');
+        $settable->add_field('defaultmasterygoal', XMLDB_TYPE_NUMBER, '3,1', null, XMLDB_NOTNULL, null, '4.0');
+        $settable->add_field('archived', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+        $settable->add_field('createdby', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $settable->add_field('modifiedby', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $settable->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $settable->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $settable->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $settable->add_index('archived', XMLDB_INDEX_NOTUNIQUE, ['archived']);
+        if (!$dbman->table_exists($settable)) {
+            $dbman->create_table($settable);
+        }
+
+        $membershiptable = new xmldb_table('adaptivereview_set_cards');
+        $membershiptable->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $membershiptable->add_field('setid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $membershiptable->add_field('cardid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $membershiptable->add_field('sortorder', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $membershiptable->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $membershiptable->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $membershiptable->add_key('setid', XMLDB_KEY_FOREIGN, ['setid'], 'adaptivereview_sets', ['id']);
+        $membershiptable->add_key('cardid', XMLDB_KEY_FOREIGN, ['cardid'], 'adaptivereview_cards', ['id']);
+        $membershiptable->add_index('setid_cardid', XMLDB_INDEX_UNIQUE, ['setid', 'cardid']);
+        $membershiptable->add_index('setid_sortorder', XMLDB_INDEX_NOTUNIQUE, ['setid', 'sortorder']);
+        if (!$dbman->table_exists($membershiptable)) {
+            $dbman->create_table($membershiptable);
+        }
+
+        $field = new xmldb_field('setid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'introformat');
+        if (!$dbman->field_exists($activitytable, $field)) {
+            $dbman->add_field($activitytable, $field);
+        }
+        $field = new xmldb_field('masterygoal', XMLDB_TYPE_NUMBER, '3,1', null, XMLDB_NOTNULL, null, '4.0', 'setid');
+        if (!$dbman->field_exists($activitytable, $field)) {
+            $dbman->add_field($activitytable, $field);
+        }
+
+        $now = time();
+        $activities = $DB->get_records('adaptivereview', null, 'id ASC');
+        foreach ($activities as $activity) {
+            $setid = $DB->insert_record('adaptivereview_sets', (object) [
+                'name' => $activity->name,
+                'description' => $activity->intro,
+                'descriptionformat' => $activity->introformat,
+                'defaultmasterygoal' => 4.0,
+                'archived' => 0,
+                'createdby' => 0,
+                'modifiedby' => 0,
+                'timecreated' => $activity->timecreated ?: $now,
+                'timemodified' => $activity->timemodified ?: $now,
+            ]);
+
+            $sortorder = 0;
+            $cards = $DB->get_records('adaptivereview_cards',
+                ['adaptivereviewid' => $activity->id], 'id ASC', 'id');
+            foreach ($cards as $card) {
+                $DB->insert_record('adaptivereview_set_cards', (object) [
+                    'setid' => $setid,
+                    'cardid' => $card->id,
+                    'sortorder' => $sortorder++,
+                    'timecreated' => $now,
+                ]);
+            }
+
+            $DB->set_field('adaptivereview', 'setid', $setid, ['id' => $activity->id]);
+        }
+
+        if ($DB->count_records('adaptivereview_cards') !== $legacycardcount
+                || $DB->count_records('adaptivereview_set_cards') !== $legacycardcount
+                || $DB->count_records('adaptivereview_mastery') !== $legacymasterycount
+                || $DB->count_records('adaptivereview_attempts') !== $legacyattemptcount
+                || $DB->count_records_select('adaptivereview', 'setid = 0') !== 0) {
+            throw new upgrade_exception('mod_adaptivereview', 2026101400,
+                'Global repository migration validation failed; the legacy relationships could not be preserved.');
+        }
+
+        $field = new xmldb_field('adaptivereviewid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $dbman->drop_field($cardtable, $field);
+
+        $field = new xmldb_field('itemid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'userid');
+        $dbman->rename_field($masterytable, $field, 'cardid');
+        $field = new xmldb_field('itemid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'sessionid');
+        $dbman->rename_field($attempttable, $field, 'cardid');
+
+        $dbman->add_key($masterytable,
+            new xmldb_key('cardid', XMLDB_KEY_FOREIGN, ['cardid'], 'adaptivereview_cards', ['id']));
+        $dbman->add_index($masterytable,
+            new xmldb_index('userid_cardid', XMLDB_INDEX_UNIQUE, ['userid', 'cardid']));
+        $dbman->add_key($attempttable,
+            new xmldb_key('cardid', XMLDB_KEY_FOREIGN, ['cardid'], 'adaptivereview_cards', ['id']));
+        $dbman->add_index($attempttable,
+            new xmldb_index('sessionid_cardid_attempt', XMLDB_INDEX_UNIQUE,
+                ['sessionid', 'cardid', 'attemptnumber']));
+
+        $dbman->add_index($cardtable, new xmldb_index('archived', XMLDB_INDEX_NOTUNIQUE, ['archived']));
+        $dbman->add_index($cardtable, new xmldb_index('category', XMLDB_INDEX_NOTUNIQUE, ['category']));
+        $dbman->add_key($activitytable,
+            new xmldb_key('setid', XMLDB_KEY_FOREIGN, ['setid'], 'adaptivereview_sets', ['id']));
+        upgrade_mod_savepoint(true, 2026101400, 'adaptivereview');
+    }
+
     return true;
 }

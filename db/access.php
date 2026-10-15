@@ -41,6 +41,13 @@ $capabilities = [
             'editingteacher' => CAP_ALLOW,
             'manager' => CAP_ALLOW
         ]
-    ]
+    ],
+    'mod/adaptivereview:manageglobalrepository' => [
+        'riskbitmask' => RISK_XSS | RISK_DATALOSS,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [
+            'manager' => CAP_ALLOW,
+        ],
+    ],
 ];
-

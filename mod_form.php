@@ -47,16 +47,38 @@ class mod_adaptivereview_mod_form extends moodleform_mod {
         // Plugin-specific settings.
         $mform->addElement('header', 'adaptivereviewfieldset', get_string('settings', 'mod_adaptivereview'));
 
-        $mform->addElement('select', 'cardorder', get_string('cardorder', 'mod_adaptivereview'), [
+        $mform->addElement('select', 'itemorder', get_string('cardorder', 'mod_adaptivereview'), [
             0 => get_string('cardorder_random', 'mod_adaptivereview'),
             1 => get_string('cardorder_sequential', 'mod_adaptivereview'),
         ]);
-        $mform->setDefault('cardorder', 0);
-        $mform->addHelpButton('cardorder', 'cardorder', 'mod_adaptivereview');
+        $mform->setDefault('itemorder', 0);
+        $mform->addHelpButton('itemorder', 'cardorder', 'mod_adaptivereview');
+
+        $mform->addElement('text', 'masterygoal', get_string('masterygoal', 'mod_adaptivereview'), ['size' => 5]);
+        $mform->setType('masterygoal', PARAM_FLOAT);
+        $mform->setDefault('masterygoal', 4.0);
+        $mform->addRule('masterygoal', null, 'required', null, 'client');
+        $mform->addHelpButton('masterygoal', 'masterygoal', 'mod_adaptivereview');
 
         // Completion rules are added by add_completion_rules() below.
         $this->standard_coursemodule_elements();
         $this->add_action_buttons();
+    }
+
+    /**
+     * Validate the activity-specific mastery goal.
+     *
+     * @param array $data Submitted form values.
+     * @param array $files Submitted files.
+     * @return array Validation errors.
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+        $masterygoal = (float) ($data['masterygoal'] ?? 0);
+        if ($masterygoal < 0.1 || $masterygoal > 5.9) {
+            $errors['masterygoal'] = get_string('masterygoalerror', 'mod_adaptivereview');
+        }
+        return $errors;
     }
 
     /**

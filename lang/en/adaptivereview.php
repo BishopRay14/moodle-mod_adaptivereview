@@ -25,6 +25,7 @@ $string['modulenameplural'] = 'Adaptive Reviews';
 $string['pluginadministration'] = 'Adaptive Review administration';
 $string['pluginname'] = 'Adaptive Review';
 $string['adaptivereview:addinstance'] = 'Add a new Adaptive Review';
+$string['adaptivereview:manageglobalrepository'] = 'Manage the global Adaptive Review repository';
 $string['adaptivereview:view'] = 'View Adaptive Review';
 
 $string['adaptivereviewname'] = 'Activity Name';
@@ -57,6 +58,9 @@ $string['cardorder'] = 'Card Order';
 $string['cardorder_random'] = 'Random';
 $string['cardorder_sequential'] = 'Sequential';
 $string['cardorder_help'] = 'Determines whether cards are presented in a random order or sequentially as they were added.';
+$string['masterygoal'] = 'Set Mastery goal';
+$string['masterygoal_help'] = 'The mastery score students work toward in this activity. The card keeps its lifelong mastery score even when another course uses a different goal.';
+$string['masterygoalerror'] = 'Enter a mastery goal from 0.1 to 5.9.';
 
 $string['question'] = 'Question';
 $string['answer'] = 'Answer';
@@ -71,7 +75,7 @@ $string['progress_aria'] = 'Progress: {mastered} of {total} cards have reached t
 // Privacy metadata.
 $string['privacy:metadata:adaptivereview_mastery'] = 'Information about user progress on Adaptive Review.';
 $string['privacy:metadata:adaptivereview_mastery:userid'] = 'The user ID.';
-$string['privacy:metadata:adaptivereview_mastery:itemid'] = 'The card ID.';
+$string['privacy:metadata:adaptivereview_mastery:cardid'] = 'The global card ID.';
 $string['privacy:metadata:adaptivereview_mastery:box_number'] = 'The Leitner box the card is currently in.';
 $string['privacy:metadata:adaptivereview_mastery:count_correct'] = 'The number of times the user answered the card correctly.';
 $string['privacy:metadata:adaptivereview_mastery:count_wrong'] = 'The number of times the user answered the card incorrectly.';
@@ -89,7 +93,7 @@ $string['privacy:metadata:adaptivereview_sessions:timecreated'] = 'The timestamp
 $string['privacy:metadata:adaptivereview_sessions:timecompleted'] = 'The timestamp when the session completed.';
 $string['privacy:metadata:adaptivereview_attempts'] = 'The history of retrieval judgments made during Adaptive Review sessions.';
 $string['privacy:metadata:adaptivereview_attempts:sessionid'] = 'The review session containing the attempt.';
-$string['privacy:metadata:adaptivereview_attempts:itemid'] = 'The card presented for retrieval.';
+$string['privacy:metadata:adaptivereview_attempts:cardid'] = 'The global card presented for retrieval.';
 $string['privacy:metadata:adaptivereview_attempts:attemptnumber'] = 'The attempt number for the card in its session.';
 $string['privacy:metadata:adaptivereview_attempts:response'] = 'The learner response to the card.';
 $string['privacy:metadata:adaptivereview_attempts:wasdue'] = 'Whether the card was due when the session started.';

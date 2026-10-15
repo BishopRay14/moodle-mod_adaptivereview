@@ -58,15 +58,31 @@ final class external_test extends \core_external\tests\externallib_testcase {
         $adaptivereview = $this->getDataGenerator()->create_module('adaptivereview', ['course' => $course->id]);
 
         // Clear default demo cards inserted by the mod_form/lib.php to start fresh.
-        $DB->delete_records('adaptivereview_items', ['adaptivereviewid' => $adaptivereview->id]);
+        $democardids = $DB->get_fieldset_select('adaptivereview_set_cards', 'cardid', 'setid = ?',
+            [$adaptivereview->setid]);
+        $DB->delete_records('adaptivereview_set_cards', ['setid' => $adaptivereview->setid]);
+        if ($democardids) {
+            [$insql, $params] = $DB->get_in_or_equal($democardids);
+            $DB->delete_records_select('adaptivereview_cards', "id $insql", $params);
+        }
 
         // Insert a test card.
         $card = new \stdClass();
-        $card->adaptivereviewid = $adaptivereview->id;
         $card->question = 'What is the capital of France?';
         $card->answer = 'Paris';
         $card->hint = 'City of light';
-        $card->id = $DB->insert_record('adaptivereview_items', $card);
+        $card->archived = 0;
+        $card->createdby = 0;
+        $card->modifiedby = 0;
+        $card->timecreated = time();
+        $card->timemodified = time();
+        $card->id = $DB->insert_record('adaptivereview_cards', $card);
+        $DB->insert_record('adaptivereview_set_cards', (object) [
+            'setid' => $adaptivereview->setid,
+            'cardid' => $card->id,
+            'sortorder' => 0,
+            'timecreated' => time(),
+        ]);
 
         return [$course, $student, $adaptivereview, $card];
     }
@@ -111,7 +127,7 @@ final class external_test extends \core_external\tests\externallib_testcase {
         $this->assertTrue($result['masteryeligible']);
         $this->assertEquals(0.0, $result['masterygain']);
 
-        $progress = $DB->get_record('adaptivereview_mastery', ['userid' => $student->id, 'itemid' => $card->id]);
+        $progress = $DB->get_record('adaptivereview_mastery', ['userid' => $student->id, 'cardid' => $card->id]);
         $this->assertEquals(0.0, $progress->masteryscore);
         $this->assertEquals(1, $progress->count_correct);
         $this->assertGreaterThan(time(), $progress->nextreviewdate);
@@ -123,13 +139,13 @@ final class external_test extends \core_external\tests\externallib_testcase {
         $this->assertEquals(2, $result['attemptnumber']);
         $this->assertFalse($result['masteryeligible']);
 
-        $progress = $DB->get_record('adaptivereview_mastery', ['userid' => $student->id, 'itemid' => $card->id]);
+        $progress = $DB->get_record('adaptivereview_mastery', ['userid' => $student->id, 'cardid' => $card->id]);
         $this->assertEquals(0.0, $progress->masteryscore);
         $this->assertEquals($nextreviewdate, $progress->nextreviewdate);
-        $this->assertEquals(2, $DB->count_records('adaptivereview_attempts', ['itemid' => $card->id]));
+        $this->assertEquals(2, $DB->count_records('adaptivereview_attempts', ['cardid' => $card->id]));
 
         $repeat = $DB->get_record('adaptivereview_attempts', [
-            'itemid' => $card->id,
+            'cardid' => $card->id,
             'attemptnumber' => 2,
         ]);
         $this->assertEquals(1, $repeat->isremediation);
@@ -154,7 +170,7 @@ final class external_test extends \core_external\tests\externallib_testcase {
 
         $progress = $DB->get_record('adaptivereview_mastery', [
             'userid' => $student->id,
-            'itemid' => $card->id,
+            'cardid' => $card->id,
         ]);
         $this->assertEquals(0.0, $progress->masteryscore);
         $this->assertEquals(1, $progress->count_wrong);
@@ -178,7 +194,7 @@ final class external_test extends \core_external\tests\externallib_testcase {
         $this->assertEquals(0, $result['nextreviewdate']);
         $this->assertFalse($DB->record_exists('adaptivereview_mastery', [
             'userid' => $student->id,
-            'itemid' => $card->id,
+            'cardid' => $card->id,
         ]));
         $this->assertEquals(1, $DB->count_records('adaptivereview_attempts'));
     }

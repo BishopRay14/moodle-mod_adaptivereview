@@ -64,7 +64,7 @@ final class lib_test extends \advanced_testcase {
         $this->assertNotEmpty($module->id);
 
         // Verify demo cards were created by our custom add_instance logic.
-        $cardcount = $DB->count_records('adaptivereview_items', ['adaptivereviewid' => $module->id]);
+        $cardcount = $DB->count_records('adaptivereview_set_cards', ['setid' => $module->setid]);
         $this->assertEquals(5, $cardcount); // add_instance inserts 5 demo cards
 
         // 2. Test Update
@@ -78,8 +78,8 @@ final class lib_test extends \advanced_testcase {
 
         // Create retained review history so deletion covers every user-data table.
         $cards = $DB->get_records(
-            'adaptivereview_items',
-            ['adaptivereviewid' => $module->id],
+            'adaptivereview_cards',
+            [],
             'id ASC',
             '*',
             0,
@@ -105,10 +105,11 @@ final class lib_test extends \advanced_testcase {
         $deleted = $DB->get_record('adaptivereview', ['id' => $module->id]);
         $this->assertFalse($deleted);
 
-        // Cards should also be deleted
-        $cardcount_after = $DB->count_records('adaptivereview_items', ['adaptivereviewid' => $module->id]);
-        $this->assertEquals(0, $cardcount_after);
-        $this->assertEquals(0, $DB->count_records('adaptivereview_mastery'));
+        // Global cards and lifelong mastery survive course activity deletion.
+        $this->assertEquals(5, $DB->count_records('adaptivereview_cards'));
+        $this->assertEquals(5, $DB->count_records('adaptivereview_set_cards', ['setid' => $module->setid]));
+        $this->assertEquals(1, $DB->get_field('adaptivereview_sets', 'archived', ['id' => $module->setid]));
+        $this->assertEquals(1, $DB->count_records('adaptivereview_mastery'));
         $this->assertEquals(0, $DB->count_records('adaptivereview_attempts'));
         $this->assertEquals(0, $DB->count_records('adaptivereview_sessions'));
     }

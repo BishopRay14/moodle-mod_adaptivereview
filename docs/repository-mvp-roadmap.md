@@ -13,7 +13,7 @@ Students continue to enter Adaptive Review through their course. They do not
 need to visit the repository. Authorized repository authors and administrators
 can manage all shared cards and sets.
 
-## Step 1: Test baseline and migration contract
+## Step 1: Test baseline and migration contract — Complete
 
 - Require Moodle 5.0 or later and test representative Moodle 5 releases.
 - Run PHPUnit with an isolated table prefix and dataroot.
@@ -32,7 +32,7 @@ Exit criteria:
 - The migration contract in `global-repository-migration-contract.md` is
   reviewable and unambiguous.
 
-## Step 2: Repository schema and migration
+## Step 2: Repository schema and migration — Complete
 
 - Promote existing activity-owned items to global cards without changing card
   IDs.

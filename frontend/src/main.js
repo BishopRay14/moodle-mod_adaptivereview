@@ -9,7 +9,9 @@ const rootElement = document.getElementById('v-app-mod-adaptivereview')
 if (rootElement) {
     const config = JSON.parse(rootElement.getAttribute('data-config') || '{}')
     initApi(config)
-    createApp(App).mount('#v-app-mod-adaptivereview')
+    createApp(App, {
+        masteryGoal: Number(config.masterygoal ?? 4.0),
+    }).mount('#v-app-mod-adaptivereview')
 } else {
     console.error("Mount point #v-app-mod-adaptivereview not found.")
 }

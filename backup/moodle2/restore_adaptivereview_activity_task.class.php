@@ -39,7 +39,8 @@ class restore_adaptivereview_activity_task extends restore_activity_task {
     static public function define_decode_contents() {
         $contents = [];
         $contents[] = new restore_decode_content('adaptivereview', ['intro'], 'adaptivereview');
-        $contents[] = new restore_decode_content('adaptivereview_items', ['question', 'answer', 'hint'], 'adaptivereview_items');
+        $contents[] = new restore_decode_content('adaptivereview_cards', ['question', 'answer', 'hint'],
+            'adaptivereview_cards');
         return $contents;
     }
 

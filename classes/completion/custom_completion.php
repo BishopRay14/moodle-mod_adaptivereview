@@ -80,6 +80,7 @@ class custom_completion extends activity_custom_completion {
         $userid      = $this->userid;
         $cm          = $this->cm;
         $instanceid  = $cm->instance;
+        $setid       = $DB->get_field('adaptivereview', 'setid', ['id' => $instanceid], MUST_EXIST);
         $customrules = $cm->customdata['customcompletionrules'] ?? [];
 
         if ($rule === 'completion_min_items') {
@@ -93,17 +94,17 @@ class custom_completion extends activity_custom_completion {
             // Counts cards that have been answered correctly at least once (box_number >= 1).
             // A card only reaches Box 1+ if it has been rated green at least once.
             // This is the first real quality indicator in the Leitner system —
-            // as opposed to COUNT(DISTINCT itemid) which also counts red cards.
-            $sql = "SELECT COUNT(DISTINCT p.itemid)
+            // as opposed to counting every attempted card, including incorrect responses.
+            $sql = "SELECT COUNT(DISTINCT p.cardid)
                       FROM {adaptivereview_mastery} p
                      WHERE p.userid      = :userid
                        AND p.box_number >= 1
-                       AND p.itemid IN (
-                           SELECT id FROM {adaptivereview_items} WHERE adaptivereviewid = :instanceid
+                       AND p.cardid IN (
+                           SELECT cardid FROM {adaptivereview_set_cards} WHERE setid = :setid
                        )";
             $count = (int)($DB->get_field_sql($sql, [
                 'userid'     => $userid,
-                'instanceid' => $instanceid,
+                'setid' => $setid,
             ]) ?? 0);
             return ($count >= $target) ? COMPLETION_COMPLETE : COMPLETION_INCOMPLETE;
         }
@@ -114,16 +115,16 @@ class custom_completion extends activity_custom_completion {
             }
             
             $target = (int)$customrules['completion_min_mastered'];
-            $sql = "SELECT COUNT(DISTINCT itemid)
+            $sql = "SELECT COUNT(DISTINCT cardid)
                       FROM {adaptivereview_mastery}
                      WHERE userid     = :userid
                        AND box_number = 5
-                       AND itemid IN (
-                           SELECT id FROM {adaptivereview_items} WHERE adaptivereviewid = :instanceid
+                       AND cardid IN (
+                           SELECT cardid FROM {adaptivereview_set_cards} WHERE setid = :setid
                        )";
             $mastered = (int)($DB->get_field_sql($sql, [
                 'userid'     => $userid,
-                'instanceid' => $instanceid,
+                'setid' => $setid,
             ]) ?? 0);
             return ($mastered >= $target) ? COMPLETION_COMPLETE : COMPLETION_INCOMPLETE;
         }
@@ -133,19 +134,27 @@ class custom_completion extends activity_custom_completion {
                 return COMPLETION_COMPLETE;
             }
             
-            $total = (int)$DB->count_records('adaptivereview_items', ['adaptivereviewid' => $instanceid]);
+            $total = (int) $DB->count_records_sql(
+                "SELECT COUNT(*)
+                   FROM {adaptivereview_set_cards} sc
+                   JOIN {adaptivereview_cards} c ON c.id = sc.cardid
+                  WHERE sc.setid = :setid AND c.archived = 0",
+                ['setid' => $setid]
+            );
             if ($total === 0) {
                 return COMPLETION_INCOMPLETE; // No cards exist yet.
             }
             
-            $sql = "SELECT COUNT(DISTINCT p.itemid)
+            $sql = "SELECT COUNT(DISTINCT p.cardid)
                       FROM {adaptivereview_mastery} p
-                      JOIN {adaptivereview_items} c ON p.itemid = c.id
-                     WHERE c.adaptivereviewid = :instanceid
+                      JOIN {adaptivereview_set_cards} sc ON p.cardid = sc.cardid
+                      JOIN {adaptivereview_cards} c ON c.id = sc.cardid
+                     WHERE sc.setid = :setid
+                       AND c.archived = 0
                        AND p.userid    = :userid
                        AND p.box_number = 5";
             $mastered = (int)($DB->get_field_sql($sql, [
-                'instanceid' => $instanceid,
+                'setid' => $setid,
                 'userid'     => $userid,
             ]) ?? 0);
             return ($mastered === $total) ? COMPLETION_COMPLETE : COMPLETION_INCOMPLETE;

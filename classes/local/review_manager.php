@@ -148,7 +148,7 @@ class review_manager {
      * one-day follow-up schedule so cards remain available for later engine work.
      *
      * @param stdClass $session Active review session.
-     * @param stdClass $item Activity item.
+     * @param stdClass $item Global repository card.
      * @param string $response Learner response.
      * @param int|null $now Testable server time.
      * @return stdClass Recorded attempt.
@@ -164,7 +164,11 @@ class review_manager {
         if (!in_array($response, self::valid_responses(), true)) {
             throw new \invalid_parameter_exception('Invalid review response.');
         }
-        if ((int) $item->adaptivereviewid !== (int) $session->adaptivereviewid) {
+        $setid = $DB->get_field('adaptivereview', 'setid', ['id' => $session->adaptivereviewid], MUST_EXIST);
+        if (!$DB->record_exists('adaptivereview_set_cards', [
+                'setid' => $setid,
+                'cardid' => $item->id,
+            ])) {
             throw new \invalid_parameter_exception('The card does not belong to this review session.');
         }
 
@@ -173,13 +177,13 @@ class review_manager {
 
         $attemptnumber = $DB->count_records('adaptivereview_attempts', [
             'sessionid' => $session->id,
-            'itemid' => $item->id,
+            'cardid' => $item->id,
         ]) + 1;
         $isremediation = $attemptnumber > 1;
 
         $mastery = $DB->get_record('adaptivereview_mastery', [
             'userid' => $session->userid,
-            'itemid' => $item->id,
+            'cardid' => $item->id,
         ]);
         $isnew = !$mastery;
 
@@ -220,7 +224,7 @@ class review_manager {
 
         $attempt = (object) [
             'sessionid' => $session->id,
-            'itemid' => $item->id,
+            'cardid' => $item->id,
             'attemptnumber' => $attemptnumber,
             'response' => $response,
             'wasdue' => (int) $wasdue,
@@ -247,14 +251,14 @@ class review_manager {
      * Create a default mutable mastery summary row.
      *
      * @param int $userid User ID.
-     * @param int $itemid Item ID.
+     * @param int $cardid Card ID.
      * @return stdClass
      */
-    private static function new_mastery_record(int $userid, int $itemid): \stdClass {
+    private static function new_mastery_record(int $userid, int $cardid): \stdClass {
         return (object) [
             'id' => 0,
             'userid' => $userid,
-            'itemid' => $itemid,
+            'cardid' => $cardid,
             'box_number' => 0,
             'status' => 0,
             'count_correct' => 0,

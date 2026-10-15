@@ -8,10 +8,18 @@ Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokument
 - Added the global repository MVP roadmap and migration acceptance contract.
 - Added an automated legacy-data fixture covering activities, duplicate card text, mastery, sessions, and attempts.
 - Documented the isolated local PHPUnit workflow.
+- Added global cards, reusable sets, ordered set membership, archival state, and repository authorship metadata.
+- Added an activity-specific Set Mastery goal and global repository management capability.
+- Added a migration rehearsal that preserves card, mastery, session, and attempt identities.
+- Added shared-card coverage proving that mastery follows the student-card pair across activities.
 
 ### Changed
 - Raised the declared minimum to Moodle 5.0, matching the project's supported platform.
 - Updated CI coverage to Moodle 5.0, 5.2, and 5.3 with supported PHP and PostgreSQL versions.
+- Migrated activity-owned cards into one repository set per existing activity without merging duplicate text.
+- Renamed mastery and attempt references from `itemid` to stable global `cardid` references.
+- Updated student review, completion, management, privacy, and backup/restore paths for repository-backed cards.
+- Restores create an isolated imported set rather than matching unrelated content by text.
 
 ## [0.2.0-prototype] - 2026-08-18 (Persistent Review History Foundation)
 

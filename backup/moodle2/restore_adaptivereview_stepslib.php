@@ -54,6 +54,21 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
         $data->timecreated = $this->apply_date_offset($data->timecreated);
         $data->timemodified = $this->apply_date_offset($data->timemodified);
 
+        // Restores intentionally create an isolated imported set. Text matches
+        // never connect restored activities to unrelated repository content.
+        $now = time();
+        $data->setid = $DB->insert_record('adaptivereview_sets', (object) [
+            'name' => $data->name,
+            'description' => $data->intro ?? '',
+            'descriptionformat' => $data->introformat ?? FORMAT_HTML,
+            'defaultmasterygoal' => $data->masterygoal ?? 4.0,
+            'archived' => 0,
+            'createdby' => 0,
+            'modifiedby' => 0,
+            'timecreated' => $now,
+            'timemodified' => $now,
+        ]);
+
         // insert the adaptivereview record.
         $newitemid = $DB->insert_record('adaptivereview', $data);
         $this->apply_activity_instance($newitemid);
@@ -65,10 +80,24 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
         $data = (object)$data;
         $oldid = $data->id;
 
-        $data->adaptivereviewid = $this->get_new_parentid('adaptivereview');
+        $activityid = $this->get_new_parentid('adaptivereview');
+        $setid = $DB->get_field('adaptivereview', 'setid', ['id' => $activityid], MUST_EXIST);
+        $sortorder = $data->sortorder ?? 0;
+        unset($data->sortorder);
+        $data->archived = 0;
+        $data->createdby = 0;
+        $data->modifiedby = 0;
+        $data->timecreated = time();
+        $data->timemodified = time();
 
-        $newitemid = $DB->insert_record('adaptivereview_items', $data);
-        $this->set_mapping('adaptivereview_items', $oldid, $newitemid);
+        $newcardid = $DB->insert_record('adaptivereview_cards', $data);
+        $DB->insert_record('adaptivereview_set_cards', (object) [
+            'setid' => $setid,
+            'cardid' => $newcardid,
+            'sortorder' => $sortorder,
+            'timecreated' => time(),
+        ]);
+        $this->set_mapping('adaptivereview_cards', $oldid, $newcardid);
     }
 
     protected function process_adaptivereview_mastery($data) {
@@ -83,13 +112,13 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
             return; // Don't restore if the user isn't found
         }
 
-        $data->itemid = $this->get_new_parentid('adaptivereview_items');
+        $data->cardid = $this->get_new_parentid('adaptivereview_cards');
         $data->last_reviewed = $this->apply_date_offset($data->last_reviewed);
         $data->nextreviewdate = $this->apply_date_offset($data->nextreviewdate);
         $data->lastreviewdate = $this->apply_date_offset($data->lastreviewdate);
         
-        $newitemid = $DB->insert_record('adaptivereview_mastery', $data);
-        $this->set_mapping('adaptivereview_mastery', $oldid, $newitemid);
+        $newmasteryid = $DB->insert_record('adaptivereview_mastery', $data);
+        $this->set_mapping('adaptivereview_mastery', $oldid, $newmasteryid);
     }
 
     protected function process_adaptivereview_session($data) {
@@ -117,8 +146,8 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
         $data = (object) $data;
         $oldid = $data->id;
         $data->sessionid = $this->get_new_parentid('adaptivereview_sessions');
-        $data->itemid = $this->get_mappingid('adaptivereview_items', $data->itemid);
-        if (!$data->sessionid || !$data->itemid) {
+        $data->cardid = $this->get_mappingid('adaptivereview_cards', $data->cardid);
+        if (!$data->sessionid || !$data->cardid) {
             return;
         }
 

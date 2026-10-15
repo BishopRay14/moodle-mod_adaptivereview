@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/adaptivereview/db" VERSION="2026081800" COMMENT="XMLDB file for Moodle mod_adaptivereview"
+<XMLDB PATH="mod/adaptivereview/db" VERSION="2026101400" COMMENT="XMLDB file for mod_adaptivereview"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
   <TABLES>
-    <TABLE NAME="adaptivereview" COMMENT="Instance settings for adaptivereview activity">
+    <TABLE NAME="adaptivereview_cards" COMMENT="Global Adaptive Review card repository">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Course adaptivereview activity belongs to"/>
-        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="name field for moodle instances"/>
-        <FIELD NAME="intro" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="General introduction of the adaptivereview activity"/>
-        <FIELD NAME="introformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Format of the intro field (1 = HTML, 0 = MOODLE, 2 = PLAIN, or 4 = MARKDOWN)"/>
-        <FIELD NAME="itemorder" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="0 for random, 1 for sequential"/>
-        <FIELD NAME="completion_min_items" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Minimum items required for completion"/>
-        <FIELD NAME="completion_min_mastered" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Minimum items required to reach Box 5 for completion"/>
-        <FIELD NAME="completion_all_mastered" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Require all items to be in Box 5 for completion"/>
+        <FIELD NAME="question" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Question text"/>
+        <FIELD NAME="answer" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Answer text"/>
+        <FIELD NAME="hint" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Optional hint"/>
+        <FIELD NAME="category" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Optional category"/>
+        <FIELD NAME="archived" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="modifiedby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>
@@ -22,54 +21,103 @@
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
       </KEYS>
       <INDEXES>
+        <INDEX NAME="archived" UNIQUE="false" FIELDS="archived"/>
+        <INDEX NAME="category" UNIQUE="false" FIELDS="category"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="adaptivereview_sets" COMMENT="Reusable sets of global Adaptive Review cards">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="description" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="descriptionformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="defaultmasterygoal" TYPE="number" LENGTH="3" DECIMALS="1" NOTNULL="true" DEFAULT="4.0" SEQUENCE="false"/>
+        <FIELD NAME="archived" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="createdby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="modifiedby" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="archived" UNIQUE="false" FIELDS="archived"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="adaptivereview_set_cards" COMMENT="Ordered membership of cards in reusable sets">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="setid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="cardid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="setid" TYPE="foreign" FIELDS="setid" REFTABLE="adaptivereview_sets" REFFIELDS="id"/>
+        <KEY NAME="cardid" TYPE="foreign" FIELDS="cardid" REFTABLE="adaptivereview_cards" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="setid_cardid" UNIQUE="true" FIELDS="setid, cardid"/>
+        <INDEX NAME="setid_sortorder" UNIQUE="false" FIELDS="setid, sortorder"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="adaptivereview" COMMENT="Instance settings for adaptivereview activity">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Course adaptivereview activity belongs to"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Name field for Moodle instances"/>
+        <FIELD NAME="intro" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="General introduction of the adaptivereview activity"/>
+        <FIELD NAME="introformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="setid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Selected global card set"/>
+        <FIELD NAME="masterygoal" TYPE="number" LENGTH="3" DECIMALS="1" NOTNULL="true" DEFAULT="4.0" SEQUENCE="false"/>
+        <FIELD NAME="itemorder" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="0 for random, 1 for sequential"/>
+        <FIELD NAME="completion_min_items" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="completion_min_mastered" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="completion_all_mastered" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="setid" TYPE="foreign" FIELDS="setid" REFTABLE="adaptivereview_sets" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
         <INDEX NAME="course" UNIQUE="false" FIELDS="course"/>
       </INDEXES>
     </TABLE>
-    <TABLE NAME="adaptivereview_items" COMMENT="Items for the adaptivereview activity">
+    <TABLE NAME="adaptivereview_mastery" COMMENT="Lifelong user mastery for global cards">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="adaptivereviewid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Foreign key to adaptivereview instance"/>
-        <FIELD NAME="question" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="The question text"/>
-        <FIELD NAME="answer" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="The answer text"/>
-        <FIELD NAME="hint" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Optional hint"/>
-        <FIELD NAME="category" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Optional category"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="cardid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="box_number" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="status" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="count_correct" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="count_wrong" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="last_reviewed" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="masteryscore" TYPE="number" LENGTH="5" DECIMALS="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="requiredintervaldays" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="nextreviewdate" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="lastreviewdate" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-        <KEY NAME="adaptivereviewid" TYPE="foreign" FIELDS="adaptivereviewid" REFTABLE="adaptivereview" REFFIELDS="id"/>
-      </KEYS>
-    </TABLE>
-    <TABLE NAME="adaptivereview_mastery" COMMENT="User state and progress for adaptivereview">
-      <FIELDS>
-        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="User ID"/>
-        <FIELD NAME="itemid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Foreign key to adaptivereview_items"/>
-        <FIELD NAME="box_number" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Leitner box number (0-5)"/>
-        <FIELD NAME="status" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Status of the item for the user"/>
-        <FIELD NAME="count_correct" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Times answered correctly"/>
-        <FIELD NAME="count_wrong" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Times answered incorrectly"/>
-        <FIELD NAME="last_reviewed" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Timestamp of last review"/>
-        <FIELD NAME="masteryscore" TYPE="number" LENGTH="5" DECIMALS="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Mastery score from 0.0 to 5.9"/>
-        <FIELD NAME="requiredintervaldays" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Days required before full mastery gain"/>
-        <FIELD NAME="nextreviewdate" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Timestamp when the card is next due"/>
-        <FIELD NAME="lastreviewdate" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Timestamp of last mastery review"/>
-      </FIELDS>
-      <KEYS>
-        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-        <KEY NAME="itemid" TYPE="foreign" FIELDS="itemid" REFTABLE="adaptivereview_items" REFFIELDS="id"/>
+        <KEY NAME="cardid" TYPE="foreign" FIELDS="cardid" REFTABLE="adaptivereview_cards" REFFIELDS="id"/>
       </KEYS>
       <INDEXES>
         <INDEX NAME="userid" UNIQUE="false" FIELDS="userid"/>
-        <INDEX NAME="userid_itemid" UNIQUE="true" FIELDS="userid, itemid"/>
+        <INDEX NAME="userid_cardid" UNIQUE="true" FIELDS="userid, cardid"/>
       </INDEXES>
     </TABLE>
     <TABLE NAME="adaptivereview_sessions" COMMENT="Server-owned Adaptive Review learning sessions">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="adaptivereviewid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Adaptive Review activity for this session"/>
-        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="User who owns this session"/>
-        <FIELD NAME="sessionkey" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="Opaque client session identifier"/>
-        <FIELD NAME="mode" TYPE="char" LENGTH="16" NOTNULL="true" SEQUENCE="false" COMMENT="Review session mode: due, new, or early"/>
+        <FIELD NAME="adaptivereviewid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="sessionkey" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="mode" TYPE="char" LENGTH="16" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timecompleted" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>
@@ -86,10 +134,10 @@
     <TABLE NAME="adaptivereview_attempts" COMMENT="Append-only retrieval attempt history">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="sessionid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Parent Adaptive Review session"/>
-        <FIELD NAME="itemid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Card presented for retrieval"/>
-        <FIELD NAME="attemptnumber" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Attempt number for this card in the session"/>
-        <FIELD NAME="response" TYPE="char" LENGTH="16" NOTNULL="true" SEQUENCE="false" COMMENT="Learner response: know or notyet"/>
+        <FIELD NAME="sessionid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="cardid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="attemptnumber" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
+        <FIELD NAME="response" TYPE="char" LENGTH="16" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="wasdue" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="isremediation" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="masteryeligible" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
@@ -107,10 +155,10 @@
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
         <KEY NAME="sessionid" TYPE="foreign" FIELDS="sessionid" REFTABLE="adaptivereview_sessions" REFFIELDS="id"/>
-        <KEY NAME="itemid" TYPE="foreign" FIELDS="itemid" REFTABLE="adaptivereview_items" REFFIELDS="id"/>
+        <KEY NAME="cardid" TYPE="foreign" FIELDS="cardid" REFTABLE="adaptivereview_cards" REFFIELDS="id"/>
       </KEYS>
       <INDEXES>
-        <INDEX NAME="sessionid_itemid_attempt" UNIQUE="true" FIELDS="sessionid, itemid, attemptnumber"/>
+        <INDEX NAME="sessionid_cardid_attempt" UNIQUE="true" FIELDS="sessionid, cardid, attemptnumber"/>
         <INDEX NAME="timecreated" UNIQUE="false" FIELDS="timecreated"/>
       </INDEXES>
     </TABLE>

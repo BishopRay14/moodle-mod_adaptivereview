@@ -85,6 +85,7 @@ $appdata = [
     'sesskey'    => sesskey(),
     'instanceid' => (int)$adaptivereview->id,
     'cmid'       => (int)$cm->id,
+    'masterygoal' => (float)$adaptivereview->masterygoal,
 ];
 
 // Mount point for Vue

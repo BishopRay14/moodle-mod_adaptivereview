@@ -41,6 +41,7 @@ class mod_adaptivereview_generator extends testing_module_generator {
         $record = (object) (array) $record;
 
         $record->itemorder ??= 0;
+        $record->masterygoal ??= 4.0;
         $record->completion_min_items ??= 0;
         $record->completion_min_mastered ??= 0;
         $record->completion_all_mastered ??= 0;

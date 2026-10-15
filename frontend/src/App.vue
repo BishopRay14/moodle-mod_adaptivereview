@@ -183,6 +183,13 @@ import {
     submitAnswer,
 } from './api';
 
+const props = defineProps({
+    masteryGoal: {
+        type: Number,
+        default: 4.0,
+    },
+});
+
 const FALLBACKS = {
     feedback_perfect_title: 'Strong result',
     feedback_perfect_desc: 'You recalled every card correctly. The material is sticking.',
@@ -211,7 +218,7 @@ const getString = (key) => {
     return FALLBACKS[key] ?? key;
 };
 
-const masteryGoal = ref(4.0);
+const masteryGoal = ref(props.masteryGoal);
 const sessionActive = ref(false);
 const sessionFinished = ref(false);
 const allCardsMode = ref(false);
