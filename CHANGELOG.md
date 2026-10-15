@@ -12,7 +12,7 @@ Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokument
 - Added an activity-specific Set Mastery goal and global repository management capability.
 - Added a migration rehearsal that preserves card, mastery, session, and attempt identities.
 - Added shared-card coverage proving that mastery follows the student-card pair across activities.
-- Added the `mastery-v1` scheduler with mastery-based intervals of 1, 3, 5, 21, 90, and 270 days.
+- Added the `mastery-v1` scheduler with mastery-based intervals of 1, 3, 7, 15, 21, 30, 60, 90, 150, and 270 days.
 - Added proportional early-review and recovery-review gains, capped at `+0.5` per successful review.
 - Added deterministic scheduler coverage for boundaries, early and late review, recovery, repeated failure, and the 5.9 cap.
 
@@ -26,6 +26,7 @@ Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokument
 - Incorrect responses preserve mastery and progressively shorten only the active recovery interval.
 - Increased stored mastery precision to three decimal places while retaining one-decimal display values.
 - A card reaching 1.0 mastery after its second successful review now moves to a three-day interval.
+- Adopted the semester-paced half-point schedule through 5.9 mastery, including the 60-day 4.0 interval.
 
 ## [0.2.0-prototype] - 2026-08-18 (Persistent Review History Foundation)
 

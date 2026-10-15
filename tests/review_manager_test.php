@@ -28,13 +28,21 @@ final class review_manager_test extends \advanced_testcase {
             [0.9, 1],
             [1.0, 3],
             [1.9, 3],
-            [2.0, 5],
-            [2.9, 5],
+            [2.0, 7],
+            [2.4, 7],
+            [2.5, 15],
+            [2.9, 15],
             [3.0, 21],
-            [3.9, 21],
-            [4.0, 90],
+            [3.4, 21],
+            [3.5, 30],
+            [3.9, 30],
+            [4.0, 60],
+            [4.4, 60],
+            [4.5, 90],
             [4.9, 90],
-            [5.0, 270],
+            [5.0, 150],
+            [5.4, 150],
+            [5.5, 270],
             [5.9, 270],
         ];
 
@@ -203,9 +211,9 @@ final class review_manager_test extends \advanced_testcase {
     public function test_repeated_failures_shorten_recovery_interval(): void {
         [$student, $activity, $card] = $this->create_review_context();
         $base = 4000000;
-        $this->create_mastery($student->id, $card->id, 4.2, $base, 90);
+        $this->create_mastery($student->id, $card->id, 4.2, $base, 60);
 
-        $firstfailuretime = $base + (90 * DAYSECS);
+        $firstfailuretime = $base + (60 * DAYSECS);
         $firstsession = review_manager::start_session(
             $activity->id,
             $student->id,
@@ -218,10 +226,10 @@ final class review_manager_test extends \advanced_testcase {
             review_manager::RESPONSE_NOTYET,
             $firstfailuretime
         );
-        $this->assertEquals(30, $firstfailure->intervalafter);
+        $this->assertEquals(20, $firstfailure->intervalafter);
         $this->assertEquals(4.2, (float) $firstfailure->masteryafter);
 
-        $secondfailuretime = $firstfailuretime + (30 * DAYSECS);
+        $secondfailuretime = $firstfailuretime + (20 * DAYSECS);
         $secondsession = review_manager::start_session(
             $activity->id,
             $student->id,
@@ -235,9 +243,9 @@ final class review_manager_test extends \advanced_testcase {
             $secondfailuretime
         );
 
-        $this->assertEquals(10, $secondfailure->intervalafter);
+        $this->assertEquals(7, $secondfailure->intervalafter);
         $this->assertEquals(4.2, (float) $secondfailure->masteryafter);
-        $this->assertEquals($secondfailuretime + (10 * DAYSECS), $secondfailure->nextreviewdate);
+        $this->assertEquals($secondfailuretime + (7 * DAYSECS), $secondfailure->nextreviewdate);
     }
 
     /**

@@ -165,14 +165,26 @@ class review_manager {
         if ($mastery < 2.0) {
             return 3;
         }
+        if ($mastery < 2.5) {
+            return 7;
+        }
         if ($mastery < 3.0) {
-            return 5;
+            return 15;
+        }
+        if ($mastery < 3.5) {
+            return 21;
         }
         if ($mastery < 4.0) {
-            return 21;
+            return 30;
+        }
+        if ($mastery < 4.5) {
+            return 60;
         }
         if ($mastery < 5.0) {
             return 90;
+        }
+        if ($mastery < 5.5) {
+            return 150;
         }
 
         return 270;
@@ -256,7 +268,9 @@ class review_manager {
         $masterybefore = $mastery
             ? min(self::MAX_MASTERY, max(0.0, (float) $mastery->masteryscore))
             : 0.0;
-        $intervalbefore = self::required_interval_days($masterybefore);
+        $intervalbefore = $mastery && (int) $mastery->requiredintervaldays > 0
+            ? (int) $mastery->requiredintervaldays
+            : self::required_interval_days($masterybefore);
         $previousattemptdate = $mastery ? (int) $mastery->last_reviewed : 0;
         $previousreviewdate = $mastery ? (int) $mastery->lastreviewdate : 0;
         $previousduedate = $mastery ? (int) $mastery->nextreviewdate : 0;
