@@ -31,6 +31,7 @@ $string['adaptivereview:view'] = 'View Adaptive Review';
 $string['adaptivereviewname'] = 'Activity Name';
 $string['settings'] = 'Adaptive Review Settings';
 $string['completion_min_items'] = 'Minimum cards answered correctly';
+$string['completion_min_items_help'] = 'A card counts as correctly answered once it has received at least one correct response.';
 $string['completion_min_cards_desc'] = 'Student must answer at least this many cards correctly at least once:';
 $string['completion_min_cards_help'] = 'A card counts as "correctly answered" once it has been rated green at least once and is in Box 1 or higher. Cards that were only rated red or yellow do not count.';
 
