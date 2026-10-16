@@ -1,0 +1,210 @@
+{{!
+    @template mod_adaptivereview/repository
+
+    Global repository management for authorized Adaptive Review authors.
+}}
+<div class="mod-adaptivereview-repository">
+    <div class="row">
+        <aside class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="h5">{{#str}}repositorysets, mod_adaptivereview{{/str}}</h3>
+                    <form action="{{baseurl}}" method="get" class="mb-3">
+                        <label class="sr-only" for="adaptivereview-set-search">{{#str}}searchsets, mod_adaptivereview{{/str}}</label>
+                        <input id="adaptivereview-set-search" class="form-control" type="search" name="setsearch"
+                               value="{{setsearch}}" placeholder="{{#str}}searchsets, mod_adaptivereview{{/str}}">
+                    </form>
+                    <div class="list-group mb-4">
+                        {{#sets}}
+                        <a href="{{url}}" class="list-group-item list-group-item-action {{#selected}}active{{/selected}}">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{name}}</strong>
+                                {{#archived}}<span class="badge badge-secondary">{{#str}}archived, mod_adaptivereview{{/str}}</span>{{/archived}}
+                            </div>
+                            <small>{{cardcount}} {{#str}}cards, mod_adaptivereview{{/str}} · {{activitycount}} {{#str}}activities, mod_adaptivereview{{/str}}</small>
+                        </a>
+                        {{/sets}}
+                    </div>
+
+                    <h4 class="h6">{{#str}}createset, mod_adaptivereview{{/str}}</h4>
+                    <form action="{{baseurl}}" method="post">
+                        <input type="hidden" name="action" value="createset">
+                        <input type="hidden" name="sesskey" value="{{sesskey}}">
+                        <div class="form-group">
+                            <label for="adaptivereview-new-set-name">{{#str}}setname, mod_adaptivereview{{/str}}</label>
+                            <input id="adaptivereview-new-set-name" class="form-control" type="text" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="adaptivereview-new-set-description">{{#str}}setdescription, mod_adaptivereview{{/str}}</label>
+                            <textarea id="adaptivereview-new-set-description" class="form-control" name="description" rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="adaptivereview-new-set-goal">{{#str}}defaultmasterygoal, mod_adaptivereview{{/str}}</label>
+                            <input id="adaptivereview-new-set-goal" class="form-control" type="number" name="defaultmasterygoal"
+                                   value="4.0" min="0.1" max="5.9" step="0.1" required>
+                        </div>
+                        <button class="btn btn-primary" type="submit">{{#str}}createset, mod_adaptivereview{{/str}}</button>
+                    </form>
+                </div>
+            </div>
+        </aside>
+
+        <section class="col-lg-8">
+            {{#selectedset}}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h3 class="h4">{{name}}</h3>
+                        {{#archived}}<span class="badge badge-secondary">{{#str}}archived, mod_adaptivereview{{/str}}</span>{{/archived}}
+                    </div>
+                    <form action="{{baseurl}}" method="post">
+                        <input type="hidden" name="action" value="updateset">
+                        <input type="hidden" name="setid" value="{{id}}">
+                        <input type="hidden" name="sesskey" value="{{sesskey}}">
+                        <div class="form-group">
+                            <label>{{#str}}setname, mod_adaptivereview{{/str}}</label>
+                            <input class="form-control" type="text" name="name" value="{{name}}" required {{#archived}}disabled{{/archived}}>
+                        </div>
+                        <div class="form-group">
+                            <label>{{#str}}setdescription, mod_adaptivereview{{/str}}</label>
+                            <textarea class="form-control" name="description" rows="2" {{#archived}}disabled{{/archived}}>{{description}}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>{{#str}}defaultmasterygoal, mod_adaptivereview{{/str}}</label>
+                            <input class="form-control" type="number" name="defaultmasterygoal" value="{{defaultmasterygoal}}"
+                                   min="0.1" max="5.9" step="0.1" required {{#archived}}disabled{{/archived}}>
+                        </div>
+                        {{^archived}}<button class="btn btn-primary" type="submit">{{#str}}savechanges{{/str}}</button>{{/archived}}
+                    </form>
+                    <div class="d-flex flex-wrap mt-3" style="gap: .5rem;">
+                        {{^archived}}
+                        <form action="{{baseurl}}" method="post">
+                            <input type="hidden" name="action" value="duplicateset">
+                            <input type="hidden" name="setid" value="{{id}}">
+                            <input type="hidden" name="sesskey" value="{{sesskey}}">
+                            <button class="btn btn-outline-secondary" type="submit">{{#str}}duplicateset, mod_adaptivereview{{/str}}</button>
+                        </form>
+                        {{^inuse}}
+                        <form action="{{baseurl}}" method="post">
+                            <input type="hidden" name="action" value="archiveset">
+                            <input type="hidden" name="setid" value="{{id}}">
+                            <input type="hidden" name="sesskey" value="{{sesskey}}">
+                            <button class="btn btn-outline-danger" type="submit">{{#str}}archiveset, mod_adaptivereview{{/str}}</button>
+                        </form>
+                        {{/inuse}}
+                        {{/archived}}
+                        {{#archived}}
+                        <form action="{{baseurl}}" method="post">
+                            <input type="hidden" name="action" value="restoreset">
+                            <input type="hidden" name="setid" value="{{id}}">
+                            <input type="hidden" name="sesskey" value="{{sesskey}}">
+                            <button class="btn btn-outline-primary" type="submit">{{#str}}restoreset, mod_adaptivereview{{/str}}</button>
+                        </form>
+                        {{/archived}}
+                    </div>
+                </div>
+            </div>
+
+            {{^archived}}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="h5">{{#str}}addnewcard, mod_adaptivereview{{/str}}</h3>
+                    {{#editcard}}
+                    <div class="alert alert-warning">{{#str}}sharedcardwarning, mod_adaptivereview, {{setcount}}{{/str}}</div>
+                    {{/editcard}}
+                    <form action="{{baseurl}}" method="post">
+                        <input type="hidden" name="action" value="{{#editcard}}updatecard{{/editcard}}{{^editcard}}createcard{{/editcard}}">
+                        <input type="hidden" name="setid" value="{{id}}">
+                        <input type="hidden" name="sesskey" value="{{sesskey}}">
+                        {{#editcard}}<input type="hidden" name="cardid" value="{{id}}">{{/editcard}}
+                        <div class="form-group">
+                            <label>{{#str}}question, mod_adaptivereview{{/str}}</label>
+                            <textarea class="form-control" name="question" rows="2" required>{{#editcard}}{{question}}{{/editcard}}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>{{#str}}answer, mod_adaptivereview{{/str}}</label>
+                            <textarea class="form-control" name="answer" rows="2" required>{{#editcard}}{{answer}}{{/editcard}}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>{{#str}}hint, mod_adaptivereview{{/str}}</label>
+                            <textarea class="form-control" name="hint" rows="1">{{#editcard}}{{hint}}{{/editcard}}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>{{#str}}category, mod_adaptivereview{{/str}}</label>
+                            <input class="form-control" type="text" name="category" value="{{#editcard}}{{category}}{{/editcard}}">
+                        </div>
+                        <button class="btn btn-primary" type="submit">{{#editcard}}{{#str}}savechanges{{/str}}{{/editcard}}{{^editcard}}{{#str}}addcard, mod_adaptivereview{{/str}}{{/editcard}}</button>
+                        {{#editcard}}<a class="btn btn-secondary" href="{{baseurl}}?setid={{selectedset.id}}">{{#str}}cancel{{/str}}</a>{{/editcard}}
+                    </form>
+                </div>
+            </div>
+            {{/archived}}
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="h5">{{#str}}setcards, mod_adaptivereview{{/str}}</h3>
+                    {{#hascards}}
+                    <div class="table-responsive">
+                        <table class="table generaltable">
+                            <thead><tr><th>{{#str}}question, mod_adaptivereview{{/str}}</th><th>{{#str}}usedinsets, mod_adaptivereview{{/str}}</th><th>{{#str}}actions{{/str}}</th></tr></thead>
+                            <tbody>
+                            {{#cards}}
+                            <tr class="{{#archived}}text-muted{{/archived}}">
+                                <td>{{{question}}} {{#archived}}<span class="badge badge-secondary">{{#str}}archived, mod_adaptivereview{{/str}}</span>{{/archived}}</td>
+                                <td>{{setcount}}</td>
+                                <td>
+                                    <div class="d-flex flex-wrap" style="gap: .25rem;">
+                                        {{^archived}}
+                                        {{#canmoveup}}<form action="{{baseurl}}" method="post"><input type="hidden" name="action" value="movecard"><input type="hidden" name="direction" value="up"><input type="hidden" name="setid" value="{{selectedset.id}}"><input type="hidden" name="cardid" value="{{id}}"><input type="hidden" name="sesskey" value="{{sesskey}}"><button class="btn btn-sm btn-outline-secondary" type="submit">↑</button></form>{{/canmoveup}}
+                                        {{#canmovedown}}<form action="{{baseurl}}" method="post"><input type="hidden" name="action" value="movecard"><input type="hidden" name="direction" value="down"><input type="hidden" name="setid" value="{{selectedset.id}}"><input type="hidden" name="cardid" value="{{id}}"><input type="hidden" name="sesskey" value="{{sesskey}}"><button class="btn btn-sm btn-outline-secondary" type="submit">↓</button></form>{{/canmovedown}}
+                                        <a class="btn btn-sm btn-outline-primary" href="{{editurl}}">{{#str}}edit{{/str}}</a>
+                                        <form action="{{baseurl}}" method="post"><input type="hidden" name="action" value="archivecard"><input type="hidden" name="setid" value="{{selectedset.id}}"><input type="hidden" name="cardid" value="{{id}}"><input type="hidden" name="sesskey" value="{{sesskey}}"><button class="btn btn-sm btn-outline-danger" type="submit">{{#str}}archive, mod_adaptivereview{{/str}}</button></form>
+                                        {{/archived}}
+                                        {{#archived}}<form action="{{baseurl}}" method="post"><input type="hidden" name="action" value="restorecard"><input type="hidden" name="setid" value="{{selectedset.id}}"><input type="hidden" name="cardid" value="{{id}}"><input type="hidden" name="sesskey" value="{{sesskey}}"><button class="btn btn-sm btn-outline-primary" type="submit">{{#str}}restore, mod_adaptivereview{{/str}}</button></form>{{/archived}}
+                                        <form action="{{baseurl}}" method="post"><input type="hidden" name="action" value="removecard"><input type="hidden" name="setid" value="{{selectedset.id}}"><input type="hidden" name="cardid" value="{{id}}"><input type="hidden" name="sesskey" value="{{sesskey}}"><button class="btn btn-sm btn-outline-secondary" type="submit">{{#str}}removefromset, mod_adaptivereview{{/str}}</button></form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {{/cards}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{/hascards}}
+                    {{^hascards}}<p>{{#str}}nocards, mod_adaptivereview{{/str}}</p>{{/hascards}}
+                </div>
+            </div>
+
+            {{^archived}}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="h5">{{#str}}reusecard, mod_adaptivereview{{/str}}</h3>
+                    <form action="{{baseurl}}" method="get" class="form-inline mb-3">
+                        <input type="hidden" name="setid" value="{{id}}">
+                        <label class="sr-only" for="adaptivereview-card-search">{{#str}}searchcards, mod_adaptivereview{{/str}}</label>
+                        <input id="adaptivereview-card-search" class="form-control mr-2" type="search" name="cardsearch" value="{{cardsearch}}" placeholder="{{#str}}searchcards, mod_adaptivereview{{/str}}">
+                        <button class="btn btn-secondary" type="submit">{{#str}}search{{/str}}</button>
+                    </form>
+                    {{#haslibrarycards}}
+                    <ul class="list-group">
+                        {{#librarycards}}
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div><strong>{{{question}}}</strong><br><small>{{{answer}}} · {{#str}}usedinsetscount, mod_adaptivereview, {{setcount}}{{/str}}</small></div>
+                            <form action="{{baseurl}}" method="post">
+                                <input type="hidden" name="action" value="addcard"><input type="hidden" name="setid" value="{{selectedset.id}}"><input type="hidden" name="cardid" value="{{id}}"><input type="hidden" name="cardsearch" value="{{cardsearch}}"><input type="hidden" name="sesskey" value="{{sesskey}}">
+                                <button class="btn btn-sm btn-primary" type="submit">{{#str}}addtoset, mod_adaptivereview{{/str}}</button>
+                            </form>
+                        </li>
+                        {{/librarycards}}
+                    </ul>
+                    {{/haslibrarycards}}
+                </div>
+            </div>
+            {{/archived}}
+            {{/selectedset}}
+
+            {{^selectedset}}
+            <div class="alert alert-info">{{#str}}repositoryempty, mod_adaptivereview{{/str}}</div>
+            {{/selectedset}}
+        </section>
+    </div>
+</div>

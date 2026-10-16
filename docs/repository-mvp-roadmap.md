@@ -45,7 +45,7 @@ Exit criteria:
 - Add repository capabilities and archival state.
 - Prove the upgrade with migration-focused PHPUnit coverage.
 
-## Step 3: Instructor integration
+## Step 3: Instructor integration — Complete
 
 - Add an activity-form set chooser.
 - Add basic global card and set management for authorized authors.

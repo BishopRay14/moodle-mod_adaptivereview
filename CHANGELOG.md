@@ -2,6 +2,20 @@
 
 Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.6.0-prototype] - 2026-10-16 (Instructor Repository Integration)
+
+### Added
+- Added an activity-form chooser for reusing active repository sets.
+- Added global set and card management for authorized repository authors.
+- Added set search, creation, metadata editing, independent duplication, ordering, and archival restoration.
+- Added card search, creation, shared editing warnings, reuse, ordering, removal, archival, and restoration.
+- Added regression coverage for activity set reuse and repository authoring operations.
+
+### Changed
+- New activities create tutorial cards only when the instructor chooses to create a new set.
+- Removing a card from a set preserves the global card and its lifelong mastery history.
+- Rewrote tutorial cards to use mastery, retrieval, and two-response language instead of legacy deck terminology.
+
 ## [Unreleased] - Global Repository MVP Test Foundation
 
 ### Added

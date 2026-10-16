@@ -59,11 +59,13 @@
 
     {{! Back to activity button }}
     <a href="{{backurl}}" class="btn btn-secondary mb-4">{{strbacktoactivity}}</a>
+    {{#repositoryurl}}<a href="{{repositoryurl}}" class="btn btn-outline-primary mb-4">{{#str}}repositorytitle, mod_adaptivereview{{/str}}</a>{{/repositoryurl}}
 
     {{! ========== 1. ADD / EDIT SINGLE CARD FORM ========== }}
     <div class="generalbox boxwidthwide boxaligncenter">
         {{#isedit}}
         <h3>{{streditsinglecard}}</h3>
+        {{#issharededit}}<div class="alert alert-warning">{{sharededitwarning}}</div>{{/issharededit}}
         {{/isedit}}
         {{^isedit}}
         <h3>{{straddsinglecard}}</h3>

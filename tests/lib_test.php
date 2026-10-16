@@ -113,4 +113,31 @@ final class lib_test extends \advanced_testcase {
         $this->assertEquals(0, $DB->count_records('adaptivereview_attempts'));
         $this->assertEquals(0, $DB->count_records('adaptivereview_sessions'));
     }
+
+    /**
+     * A new activity can select an existing repository set without cloning it.
+     */
+    public function test_add_instance_can_reuse_existing_set(): void {
+        global $DB;
+
+        $course = $this->getDataGenerator()->create_course();
+        $source = $this->getDataGenerator()->create_module('adaptivereview', [
+            'course' => $course->id,
+            'name' => 'Reusable source',
+        ]);
+        $setcount = $DB->count_records('adaptivereview_sets');
+        $cardcount = $DB->count_records('adaptivereview_cards');
+
+        $consumer = $this->getDataGenerator()->create_module('adaptivereview', [
+            'course' => $course->id,
+            'name' => 'Reusable consumer',
+            'setid' => $source->setid,
+            'masterygoal' => 4.5,
+        ]);
+
+        $this->assertEquals($source->setid, $consumer->setid);
+        $this->assertEquals($setcount, $DB->count_records('adaptivereview_sets'));
+        $this->assertEquals($cardcount, $DB->count_records('adaptivereview_cards'));
+        $this->assertEquals(4.5, (float) $consumer->masterygoal);
+    }
 }

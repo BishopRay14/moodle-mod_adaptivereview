@@ -331,6 +331,9 @@ $templatedata = [
     'managebaseurl'=> (new moodle_url('/mod/adaptivereview/manage.php'))->out(false),
     'cmid'         => $cm->id,
     'sesskey'      => sesskey(),
+    'repositoryurl' => has_capability('mod/adaptivereview:manageglobalrepository', context_system::instance())
+        ? (new moodle_url('/mod/adaptivereview/repository.php', ['setid' => $adaptivereview->setid]))->out(false)
+        : false,
 
     // Localised strings.
     'strdidacticnotice'  => get_string('didactic_limit_notice', 'mod_adaptivereview'),
@@ -366,6 +369,10 @@ $templatedata = [
     'qval'        => $editcard ? $editcard->question : '',
     'aval'        => $editcard ? $editcard->answer   : '',
     'hval'        => $editcard ? $editcard->hint     : '',
+    'issharededit' => $editcard
+        && $DB->count_records('adaptivereview_set_cards', ['cardid' => $editcard->id]) > 1,
+    'sharededitwarning' => $editcard ? get_string('sharedcardwarning', 'mod_adaptivereview',
+        $DB->count_records('adaptivereview_set_cards', ['cardid' => $editcard->id])) : '',
 
     // Prompt type selector options.
     'prompttypes' => [

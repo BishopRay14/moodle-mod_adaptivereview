@@ -17,6 +17,7 @@
 namespace mod_adaptivereview;
 
 use mod_adaptivereview\local\review_manager;
+use mod_adaptivereview\local\repository_manager;
 
 /**
  * Repository identity and sharing tests.
@@ -26,6 +27,78 @@ use mod_adaptivereview\local\review_manager;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class repository_test extends \advanced_testcase {
+
+    /**
+     * Repository operations preserve sharing, ordering, and archival rules.
+     */
+    public function test_repository_authoring_operations(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $adminid = (int) get_admin()->id;
+
+        $set = repository_manager::create_set('Church History', 'Reusable material', 4.0, $adminid, 1000);
+        $first = repository_manager::create_card(
+            $set->id,
+            'Who convened Nicaea?',
+            'Constantine',
+            '',
+            'History',
+            $adminid,
+            1001
+        );
+        $second = repository_manager::create_card(
+            $set->id,
+            'When was Nicaea?',
+            'AD 325',
+            '',
+            'History',
+            $adminid,
+            1002
+        );
+
+        repository_manager::move_card($set->id, $second->id, -1);
+        $orderedids = $DB->get_fieldset_select(
+            'adaptivereview_set_cards',
+            'cardid',
+            'setid = ?',
+            [$set->id],
+            'sortorder ASC, id ASC'
+        );
+        $this->assertSame([(string) $second->id, (string) $first->id], array_map('strval', $orderedids));
+
+        $copy = repository_manager::duplicate_set($set->id, 'Church History Copy', $adminid, 1100);
+        $sourceids = $DB->get_fieldset_select('adaptivereview_set_cards', 'cardid', 'setid = ?', [$set->id]);
+        $copyids = $DB->get_fieldset_select('adaptivereview_set_cards', 'cardid', 'setid = ?', [$copy->id]);
+        $this->assertCount(2, $copyids);
+        $this->assertEmpty(array_intersect($sourceids, $copyids));
+
+        repository_manager::remove_card_from_set($set->id, $first->id);
+        $this->assertFalse($DB->record_exists('adaptivereview_set_cards', [
+            'setid' => $set->id,
+            'cardid' => $first->id,
+        ]));
+        $this->assertEquals(0, $DB->get_field('adaptivereview_cards', 'archived', ['id' => $first->id]));
+
+        repository_manager::archive_card($first->id, $adminid, 1200);
+        $this->assertEquals(1, $DB->get_field('adaptivereview_cards', 'archived', ['id' => $first->id]));
+        repository_manager::archive_set($copy->id, $adminid, 1201);
+        $this->assertEquals(1, $DB->get_field('adaptivereview_sets', 'archived', ['id' => $copy->id]));
+    }
+
+    /**
+     * A set attached to an activity cannot be archived.
+     */
+    public function test_cannot_archive_set_in_use(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+        $course = $this->getDataGenerator()->create_course();
+        $activity = $this->getDataGenerator()->create_module('adaptivereview', ['course' => $course->id]);
+
+        $this->expectException(\moodle_exception::class);
+        repository_manager::archive_set((int) $activity->setid, (int) get_admin()->id);
+    }
 
     /**
      * A shared card keeps one mastery row when used by multiple activities.

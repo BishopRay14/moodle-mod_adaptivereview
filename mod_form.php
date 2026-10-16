@@ -26,7 +26,7 @@ require_once($CFG->dirroot.'/course/moodleform_mod.php');
 class mod_adaptivereview_mod_form extends moodleform_mod { 
 
     public function definition() {
-        global $CFG;
+        global $CFG, $DB;
 
         $mform = $this->_form;
 
@@ -46,6 +46,18 @@ class mod_adaptivereview_mod_form extends moodleform_mod {
 
         // Plugin-specific settings.
         $mform->addElement('header', 'adaptivereviewfieldset', get_string('settings', 'mod_adaptivereview'));
+
+        $setoptions = [];
+        if (empty($this->_instance)) {
+            $setoptions[0] = get_string('setcreatenew', 'mod_adaptivereview');
+        }
+        $sets = $DB->get_records('adaptivereview_sets', ['archived' => 0], 'name ASC', 'id, name');
+        foreach ($sets as $set) {
+            $setoptions[$set->id] = format_string($set->name);
+        }
+        $mform->addElement('autocomplete', 'setid', get_string('setselection', 'mod_adaptivereview'), $setoptions);
+        $mform->setDefault('setid', 0);
+        $mform->addHelpButton('setid', 'setselection', 'mod_adaptivereview');
 
         $mform->addElement('select', 'itemorder', get_string('cardorder', 'mod_adaptivereview'), [
             0 => get_string('cardorder_random', 'mod_adaptivereview'),
@@ -73,10 +85,19 @@ class mod_adaptivereview_mod_form extends moodleform_mod {
      * @return array Validation errors.
      */
     public function validation($data, $files) {
+        global $DB;
+
         $errors = parent::validation($data, $files);
         $masterygoal = (float) ($data['masterygoal'] ?? 0);
         if ($masterygoal < 0.1 || $masterygoal > 5.9) {
             $errors['masterygoal'] = get_string('masterygoalerror', 'mod_adaptivereview');
+        }
+        $setid = (int) ($data['setid'] ?? 0);
+        if (!empty($this->_instance) && $setid === 0) {
+            $errors['setid'] = get_string('setselectionerror', 'mod_adaptivereview');
+        }
+        if ($setid > 0 && !$DB->record_exists('adaptivereview_sets', ['id' => $setid, 'archived' => 0])) {
+            $errors['setid'] = get_string('setselectionerror', 'mod_adaptivereview');
         }
         return $errors;
     }

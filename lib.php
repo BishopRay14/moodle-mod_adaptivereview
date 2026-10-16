@@ -32,17 +32,23 @@ function adaptivereview_add_instance($adaptivereview) {
     $transaction = $DB->start_delegated_transaction();
     $now = time();
 
-    $setid = $DB->insert_record('adaptivereview_sets', (object) [
-        'name' => $adaptivereview->name,
-        'description' => $adaptivereview->intro ?? '',
-        'descriptionformat' => $adaptivereview->introformat ?? FORMAT_HTML,
-        'defaultmasterygoal' => $adaptivereview->masterygoal ?? 4.0,
-        'archived' => 0,
-        'createdby' => $USER->id ?? 0,
-        'modifiedby' => $USER->id ?? 0,
-        'timecreated' => $now,
-        'timemodified' => $now,
-    ]);
+    $setid = (int) ($adaptivereview->setid ?? 0);
+    $createset = $setid === 0;
+    if ($createset) {
+        $setid = $DB->insert_record('adaptivereview_sets', (object) [
+            'name' => $adaptivereview->name,
+            'description' => $adaptivereview->intro ?? '',
+            'descriptionformat' => $adaptivereview->introformat ?? FORMAT_HTML,
+            'defaultmasterygoal' => $adaptivereview->masterygoal ?? 4.0,
+            'archived' => 0,
+            'createdby' => $USER->id ?? 0,
+            'modifiedby' => $USER->id ?? 0,
+            'timecreated' => $now,
+            'timemodified' => $now,
+        ]);
+    } else {
+        $DB->get_record('adaptivereview_sets', ['id' => $setid, 'archived' => 0], 'id', MUST_EXIST);
+    }
 
     $adaptivereview->setid = $setid;
     $adaptivereview->masterygoal ??= 4.0;
@@ -61,7 +67,7 @@ function adaptivereview_add_instance($adaptivereview) {
         ['adaptivereviewid' => $id, 'category' => 'demo', 'question' => '##demo_q5##', 'answer' => '##demo_a5##', 'hint' => '##demo_h5##'],
     ];
 
-    foreach ($demo_cards as $sortorder => $card) {
+    foreach ($createset ? $demo_cards : [] as $sortorder => $card) {
         unset($card['adaptivereviewid']);
         $card += [
             'archived' => 0,
@@ -91,6 +97,12 @@ function adaptivereview_add_instance($adaptivereview) {
  */
 function adaptivereview_update_instance($adaptivereview) {
     global $DB;
+    if (!empty($adaptivereview->setid)) {
+        $DB->get_record('adaptivereview_sets', [
+            'id' => $adaptivereview->setid,
+            'archived' => 0,
+        ], 'id', MUST_EXIST);
+    }
     $adaptivereview->timemodified = time();
     $adaptivereview->id = $adaptivereview->instance;
     return $DB->update_record('adaptivereview', $adaptivereview);
@@ -235,6 +247,17 @@ function adaptivereview_extend_settings_navigation(settings_navigation $settings
             null,
             'managecards',
             new pix_icon('i/settings', '')
+        );
+    }
+
+    if (has_capability('mod/adaptivereview:manageglobalrepository', context_system::instance())) {
+        $adaptivereviewnode->add(
+            get_string('repositorytitle', 'mod_adaptivereview'),
+            new moodle_url('/mod/adaptivereview/repository.php'),
+            navigation_node::TYPE_SETTING,
+            null,
+            'adaptivereviewrepository',
+            new pix_icon('i/folder', '')
         );
     }
 }
