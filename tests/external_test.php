@@ -27,6 +27,7 @@ namespace mod_adaptivereview\external;
 
 use core_external\external_api;
 use mod_adaptivereview\external;
+use mod_adaptivereview\local\new_card_pacing;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -88,6 +89,37 @@ final class external_test extends \core_external\tests\externallib_testcase {
     }
 
     /**
+     * Add a card to an activity's repository set.
+     *
+     * @param stdClass $adaptivereview Activity record.
+     * @param int $number Card number used in test content and ordering.
+     * @return stdClass
+     */
+    protected function add_card(\stdClass $adaptivereview, int $number): \stdClass {
+        global $DB;
+
+        $card = (object) [
+            'question' => "Question {$number}",
+            'answer' => "Answer {$number}",
+            'hint' => '',
+            'archived' => 0,
+            'createdby' => 0,
+            'modifiedby' => 0,
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ];
+        $card->id = $DB->insert_record('adaptivereview_cards', $card);
+        $DB->insert_record('adaptivereview_set_cards', (object) [
+            'setid' => $adaptivereview->setid,
+            'cardid' => $card->id,
+            'sortorder' => $number,
+            'timecreated' => time(),
+        ]);
+
+        return $card;
+    }
+
+    /**
      * Test getting cards by box.
      */
     public function test_get_cards_by_box() {
@@ -105,6 +137,83 @@ final class external_test extends \core_external\tests\externallib_testcase {
         $this->assertCount(1, $result);
         $this->assertEquals($card->question, $result[0]['question']);
         $this->assertEquals($card->answer, $result[0]['answer']);
+    }
+
+    /**
+     * The New queue exposes at most five cards and cannot be bypassed.
+     */
+    public function test_new_card_daily_limit_is_server_enforced(): void {
+        global $DB;
+
+        [$course, $student, $adaptivereview] = $this->create_adaptivereview_activity();
+        for ($number = 2; $number <= 7; $number++) {
+            $this->add_card($adaptivereview, $number);
+        }
+        $this->setUser($student);
+
+        $counts = external::get_box_counts($adaptivereview->id);
+        $counts = external_api::clean_returnvalue(external::get_box_counts_returns(), $counts);
+        $this->assertEquals(5, $counts[1]['count']);
+        $this->assertEquals(7, $counts[3]['count']);
+
+        $newcards = external::get_cards_by_box($adaptivereview->id, 1);
+        $this->assertCount(5, $newcards);
+
+        $session = external::start_review_session($adaptivereview->id, 'new');
+        foreach ($newcards as $card) {
+            external::submit_answer($card['id'], 'know', $session['sessionkey']);
+        }
+
+        $counts = external::get_box_counts($adaptivereview->id);
+        $this->assertEquals(0, $counts[1]['count']);
+        $this->assertCount(0, external::get_cards_by_box($adaptivereview->id, 1));
+        $this->assertCount(7, external::get_cards_by_box($adaptivereview->id, 3));
+        $this->assertEquals(5, $DB->count_records('adaptivereview_mastery', [
+            'userid' => $student->id,
+        ]));
+        $this->assertEquals(5, new_card_pacing::remaining_today(
+            $adaptivereview->id,
+            $student->id,
+            time() + DAYSECS
+        ));
+
+        $introducedids = array_column($newcards, 'id');
+        $allcards = external::get_cards_by_box($adaptivereview->id, 3);
+        $remainingcards = array_values(array_filter($allcards, static function(array $card) use ($introducedids): bool {
+            return !in_array($card['id'], $introducedids, true);
+        }));
+        $remainingcard = $remainingcards[0];
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('newcardlimitreached', 'mod_adaptivereview'));
+        external::submit_answer($remainingcard['id'], 'know', $session['sessionkey']);
+    }
+
+    /**
+     * Due reviews pause New without hiding the complete browseable set.
+     */
+    public function test_due_cards_pause_new_queue(): void {
+        global $DB;
+
+        [$course, $student, $adaptivereview, $duecard] = $this->create_adaptivereview_activity();
+        $newcard = $this->add_card($adaptivereview, 2);
+        $this->setUser($student);
+
+        $session = external::start_review_session($adaptivereview->id, 'new');
+        external::submit_answer($duecard->id, 'know', $session['sessionkey']);
+        $DB->set_field('adaptivereview_mastery', 'nextreviewdate', time() - 1, [
+            'userid' => $student->id,
+            'cardid' => $duecard->id,
+        ]);
+
+        $counts = external::get_box_counts($adaptivereview->id);
+        $this->assertEquals(1, $counts[0]['count']);
+        $this->assertEquals(0, $counts[1]['count']);
+        $this->assertCount(0, external::get_cards_by_box($adaptivereview->id, 1));
+        $this->assertCount(2, external::get_cards_by_box($adaptivereview->id, 3));
+
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('newcardsblockedbydue', 'mod_adaptivereview'));
+        external::submit_answer($newcard->id, 'know', $session['sessionkey']);
     }
 
     /**

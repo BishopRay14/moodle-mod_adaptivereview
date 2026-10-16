@@ -54,6 +54,10 @@ $string['queue_due'] = 'Due Today';
 $string['queue_new'] = 'New';
 $string['queue_recent'] = 'Recently Learned';
 $string['queue_all'] = 'All Cards';
+$string['newcardpacing'] = 'Due reviews come first. Up to five new cards unlock each day.';
+$string['newcardpacingdue'] = 'Complete Due Today before starting new cards.';
+$string['newcardsblockedbydue'] = 'Complete your due reviews before starting new cards.';
+$string['newcardlimitreached'] = 'You have reached today\'s five-card new material limit.';
 
 $string['cardorder'] = 'Card Order';
 $string['cardorder_random'] = 'Random';

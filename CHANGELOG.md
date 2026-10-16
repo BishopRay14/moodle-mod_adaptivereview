@@ -28,6 +28,14 @@ Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokument
 - A card reaching 1.0 mastery after its second successful review now moves to a three-day interval.
 - Adopted the semester-paced half-point schedule through 5.9 mastery, including the 60-day 4.0 interval.
 
+## [0.5.0-prototype] - 2026-10-16 (New-Card Pacing MVP)
+
+### Added
+- Added server-enforced pacing of up to five new cards per activity and student day.
+- Added due-review priority while keeping the complete set available in browse-only mode.
+- Added dashboard guidance explaining the daily allowance and due-review priority.
+- Added automated coverage for queue limits, browse access, and direct-request bypass attempts.
+
 ## [0.2.0-prototype] - 2026-08-18 (Persistent Review History Foundation)
 
 ### Added

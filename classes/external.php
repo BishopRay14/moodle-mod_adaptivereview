@@ -28,6 +28,7 @@ use core_external\external_function_parameters;
 use core_external\external_multiple_structure;
 use core_external\external_single_structure;
 use core_external\external_value;
+use mod_adaptivereview\local\new_card_pacing;
 use mod_adaptivereview\local\review_manager;
 
 class external extends external_api {
@@ -63,24 +64,7 @@ class external extends external_api {
         // 2 = Recently Learned
         // 3 = All Cards
 
-        $count_due = $DB->count_records_sql(
-            "SELECT COUNT(*)
-               FROM {adaptivereview_cards} c
-               JOIN {adaptivereview_set_cards} sc ON sc.cardid = c.id
-               JOIN {adaptivereview} ar ON ar.setid = sc.setid
-               JOIN {adaptivereview_mastery} p
-                 ON c.id = p.cardid
-              WHERE ar.id = :instanceid
-                AND c.archived = 0
-                AND p.userid = :userid
-                AND p.nextreviewdate > 0
-                AND p.nextreviewdate <= :now",
-            [
-                'instanceid' => $instanceid,
-                'userid' => $userid,
-                'now' => $now,
-            ]
-        );
+        $count_due = new_card_pacing::due_count($instanceid, $userid, $now);
 
         $count_new = $DB->count_records_sql(
             "SELECT COUNT(*)
@@ -97,6 +81,8 @@ class external extends external_api {
                 'userid' => $userid,
             ]
         );
+        $remainingnew = new_card_pacing::remaining_today($instanceid, $userid, $now);
+        $count_new = $count_due > 0 ? 0 : min((int) $count_new, $remainingnew);
 
         $count_recent = $DB->count_records_sql(
             "SELECT COUNT(*)
@@ -220,6 +206,11 @@ class external extends external_api {
                 'setid' => $adaptivereview->setid,
             ]);
 
+            $remainingnew = new_card_pacing::remaining_today($instanceid, $userid, $now);
+            if (new_card_pacing::due_count($instanceid, $userid, $now) > 0 || $remainingnew === 0) {
+                $cards = [];
+            }
+
         } else if ($box == 2) {
             $sql = "$select
                     FROM {adaptivereview_cards} c
@@ -278,6 +269,10 @@ class external extends external_api {
 
         if ($adaptivereview->itemorder == 0 && $box != 3) {
             shuffle($result);
+        }
+
+        if ($box == 1) {
+            $result = array_slice($result, 0, $remainingnew);
         }
 
         return array_values($result);
