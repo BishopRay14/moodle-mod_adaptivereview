@@ -65,8 +65,8 @@
           <div v-if="(counts[box-1] || 0) > 0" class="rc-box-arrow" aria-hidden="true">→</div>
         </div>
       </div>
-      <p class="rc-pacing-note" aria-live="polite">
-        {{ counts[0] > 0 ? getString('newcardpacingdue') : getString('newcardpacing') }}
+      <p class="rc-queue-note" aria-live="polite">
+        {{ counts[0] > 0 ? getString('newcardaccessdue') : getString('newcardaccess') }}
       </p>
     </main>
 
@@ -176,8 +176,8 @@ const FALLBACKS = {
     howitworks: 'How does Adaptive Review work?',
     cards: 'Cards',
     loadingcards: 'Loading cards...',
-    newcardpacing: 'Due reviews come first. Up to five new cards unlock each day.',
-    newcardpacingdue: 'Complete Due Today before starting new cards.',
+    newcardaccess: 'Due reviews come first. Once they are complete, all new cards are available.',
+    newcardaccessdue: 'Complete Due Today before starting new cards.',
     progress_label: 'Cards meeting the goal',
     progress_aria: 'Progress: {mastered} of {total} cards have reached the mastery goal',
     // Box levels
@@ -431,7 +431,7 @@ const doReset = async () => {
   margin: 0 auto;
 }
 
-.rc-pacing-note {
+.rc-queue-note {
   max-width: 900px;
   margin: 18px auto 0;
   color: #64748b;

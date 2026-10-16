@@ -28,6 +28,12 @@ Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokument
 - A card reaching 1.0 mastery after its second successful review now moves to a three-day interval.
 - Adopted the semester-paced half-point schedule through 5.9 mastery, including the 60-day 4.0 interval.
 
+## [0.5.1-prototype] - 2026-10-16 (Uncapped New-Card Access)
+
+### Changed
+- Removed the daily new-card cap. All unstarted cards are available once due reviews are complete.
+- Retained server-enforced due-review priority and unrestricted browse-only access.
+
 ## [0.5.0-prototype] - 2026-10-16 (New-Card Pacing MVP)
 
 ### Added

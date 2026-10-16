@@ -266,7 +266,7 @@ class review_manager {
         $isnew = !$mastery;
 
         if ($session->mode === self::MODE_NEW && $isnew && !$isremediation) {
-            new_card_pacing::require_available(
+            review_queue_policy::require_new_cards_available(
                 (int) $session->adaptivereviewid,
                 (int) $session->userid,
                 $now

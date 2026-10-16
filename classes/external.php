@@ -28,8 +28,8 @@ use core_external\external_function_parameters;
 use core_external\external_multiple_structure;
 use core_external\external_single_structure;
 use core_external\external_value;
-use mod_adaptivereview\local\new_card_pacing;
 use mod_adaptivereview\local\review_manager;
+use mod_adaptivereview\local\review_queue_policy;
 
 class external extends external_api {
 
@@ -64,7 +64,7 @@ class external extends external_api {
         // 2 = Recently Learned
         // 3 = All Cards
 
-        $count_due = new_card_pacing::due_count($instanceid, $userid, $now);
+        $count_due = review_queue_policy::due_count($instanceid, $userid, $now);
 
         $count_new = $DB->count_records_sql(
             "SELECT COUNT(*)
@@ -81,8 +81,7 @@ class external extends external_api {
                 'userid' => $userid,
             ]
         );
-        $remainingnew = new_card_pacing::remaining_today($instanceid, $userid, $now);
-        $count_new = $count_due > 0 ? 0 : min((int) $count_new, $remainingnew);
+        $count_new = $count_due > 0 ? 0 : (int) $count_new;
 
         $count_recent = $DB->count_records_sql(
             "SELECT COUNT(*)
@@ -206,8 +205,7 @@ class external extends external_api {
                 'setid' => $adaptivereview->setid,
             ]);
 
-            $remainingnew = new_card_pacing::remaining_today($instanceid, $userid, $now);
-            if (new_card_pacing::due_count($instanceid, $userid, $now) > 0 || $remainingnew === 0) {
+            if (review_queue_policy::due_count($instanceid, $userid, $now) > 0) {
                 $cards = [];
             }
 
@@ -269,10 +267,6 @@ class external extends external_api {
 
         if ($adaptivereview->itemorder == 0 && $box != 3) {
             shuffle($result);
-        }
-
-        if ($box == 1) {
-            $result = array_slice($result, 0, $remainingnew);
         }
 
         return array_values($result);
