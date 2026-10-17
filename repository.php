@@ -18,23 +18,46 @@ require_once('../../config.php');
 
 use mod_adaptivereview\local\repository_manager;
 
-require_login();
-$context = context_system::instance();
-require_capability('mod/adaptivereview:manageglobalrepository', $context);
-
+$cmid = optional_param('cmid', 0, PARAM_INT);
 $action = optional_param('action', '', PARAM_ALPHA);
 $setid = optional_param('setid', 0, PARAM_INT);
 $cardid = optional_param('cardid', 0, PARAM_INT);
 $setsearch = optional_param('setsearch', '', PARAM_TEXT);
 $cardsearch = optional_param('cardsearch', '', PARAM_TEXT);
 
-$PAGE->set_context($context);
-$PAGE->set_url('/mod/adaptivereview/repository.php');
+$cm = null;
+$activity = null;
+if ($cmid > 0) {
+    $cm = get_coursemodule_from_id('adaptivereview', $cmid, 0, false, MUST_EXIST);
+    $course = get_course($cm->course);
+    require_login($course, false, $cm);
+    $PAGE->set_cm($cm, $course);
+    $activity = $DB->get_record('adaptivereview', ['id' => $cm->instance], 'id, name, setid', MUST_EXIST);
+    if ($setid === 0) {
+        $setid = (int) $activity->setid;
+    }
+} else {
+    require_login();
+    $PAGE->set_context(context_system::instance());
+}
+require_capability('mod/adaptivereview:manageglobalrepository', context_system::instance());
+
+$pageparams = [];
+if ($cmid > 0) {
+    $pageparams['cmid'] = $cmid;
+}
+if ($setid > 0) {
+    $pageparams['setid'] = $setid;
+}
+$PAGE->set_url('/mod/adaptivereview/repository.php', $pageparams);
 $PAGE->set_title(get_string('repositorytitle', 'mod_adaptivereview'));
 $PAGE->set_heading(get_string('repositorytitle', 'mod_adaptivereview'));
 
-$returnurl = static function(int $selectedsetid = 0, array $extra = []): moodle_url {
+$returnurl = static function(int $selectedsetid = 0, array $extra = []) use ($cmid): moodle_url {
     $params = $extra;
+    if ($cmid > 0) {
+        $params['cmid'] = $cmid;
+    }
     if ($selectedsetid > 0) {
         $params['setid'] = $selectedsetid;
     }
@@ -226,7 +249,8 @@ if ($selectedset) {
 }
 
 $templatedata = [
-    'baseurl' => (new moodle_url('/mod/adaptivereview/repository.php'))->out(false),
+    'baseurl' => $returnurl()->out(false),
+    'contextcmid' => $cmid > 0 ? $cmid : false,
     'sesskey' => sesskey(),
     'setsearch' => $setsearch,
     'cardsearch' => $cardsearch,
@@ -251,6 +275,10 @@ $templatedata = [
         'hint' => $editcard->hint ?? '',
         'category' => $editcard->category ?? '',
         'setcount' => $editcard->setcount,
+    ] : false,
+    'activityreturn' => $cm && $activity ? [
+        'url' => (new moodle_url('/mod/adaptivereview/view.php', ['id' => $cm->id]))->out(false),
+        'label' => get_string('backtoactivitynamed', 'mod_adaptivereview', $activity->name),
     ] : false,
 ];
 

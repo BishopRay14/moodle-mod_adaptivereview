@@ -253,7 +253,7 @@ function adaptivereview_extend_settings_navigation(settings_navigation $settings
     if (has_capability('mod/adaptivereview:manageglobalrepository', context_system::instance())) {
         $adaptivereviewnode->add(
             get_string('repositorytitle', 'mod_adaptivereview'),
-            new moodle_url('/mod/adaptivereview/repository.php'),
+            new moodle_url('/mod/adaptivereview/repository.php', ['cmid' => $PAGE->cm->id]),
             navigation_node::TYPE_SETTING,
             null,
             'adaptivereviewrepository',

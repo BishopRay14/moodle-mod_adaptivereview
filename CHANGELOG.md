@@ -2,6 +2,12 @@
 
 Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.6.1-prototype] - 2026-10-16 (Repository Navigation)
+
+### Changed
+- Kept the originating Adaptive Review activity navigation visible in the global repository.
+- Added an explicit return button from the repository to the originating activity.
+
 ## [0.6.0-prototype] - 2026-10-16 (Instructor Repository Integration)
 
 ### Added

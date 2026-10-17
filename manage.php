@@ -332,7 +332,10 @@ $templatedata = [
     'cmid'         => $cm->id,
     'sesskey'      => sesskey(),
     'repositoryurl' => has_capability('mod/adaptivereview:manageglobalrepository', context_system::instance())
-        ? (new moodle_url('/mod/adaptivereview/repository.php', ['setid' => $adaptivereview->setid]))->out(false)
+        ? (new moodle_url('/mod/adaptivereview/repository.php', [
+            'cmid' => $cm->id,
+            'setid' => $adaptivereview->setid,
+        ]))->out(false)
         : false,
 
     // Localised strings.

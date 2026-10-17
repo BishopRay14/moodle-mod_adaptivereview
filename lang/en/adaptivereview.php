@@ -177,6 +177,7 @@ $string['demo_h5'] = '';
 
 $string['managecards'] = 'Manage Cards';
 $string['backtoactivity'] = 'Back to activity';
+$string['backtoactivitynamed'] = 'Back to {$a}';
 $string['addsinglecard'] = 'Add single card';
 $string['editsinglecard'] = 'Edit card';
 $string['addcard'] = 'Save Card';
