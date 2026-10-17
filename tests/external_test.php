@@ -293,6 +293,34 @@ final class external_test extends \core_external\tests\externallib_testcase {
     }
 
     /**
+     * Mastery retains calculation precision while the student API displays one decimal.
+     */
+    public function test_card_mastery_is_displayed_to_one_decimal(): void {
+        global $DB;
+
+        [$course, $student, $adaptivereview, $card] = $this->create_adaptivereview_activity();
+        $this->setUser($student);
+
+        $session = external::start_review_session($adaptivereview->id, 'new');
+        external::submit_answer($card->id, 'know', $session['sessionkey']);
+        $DB->set_field('adaptivereview_mastery', 'masteryscore', 3.367, [
+            'userid' => $student->id,
+            'cardid' => $card->id,
+        ]);
+
+        $cards = external::get_cards_by_box($adaptivereview->id, 3);
+        $cards = external_api::clean_returnvalue(external::get_cards_by_box_returns(), $cards);
+
+        $this->assertCount(1, $cards);
+        $this->assertEquals(3.4, $cards[0]['masteryscore']);
+        $storedscore = $DB->get_field('adaptivereview_mastery', 'masteryscore', [
+            'userid' => $student->id,
+            'cardid' => $card->id,
+        ]);
+        $this->assertEquals(3.367, (float) $storedscore);
+    }
+
+    /**
      * Test resetting progress.
      */
     public function test_reset_progress() {

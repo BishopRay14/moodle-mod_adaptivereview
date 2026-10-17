@@ -2,6 +2,16 @@
 
 Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.7.0-prototype] - 2026-10-17 (Mastery-v1 Scheduler Milestone)
+
+### Added
+- Added deterministic coverage for the approved 29-day perfect-retrieval path from a new card to 3.0 mastery.
+- Added explicit protection proving that immediate same-session remediation cannot earn mastery.
+- Added coverage proving that three-decimal stored mastery is displayed to students at one decimal.
+
+### Changed
+- Marked Step 4 of the global repository MVP roadmap complete after auditing every scheduler exit criterion.
+
 ## [0.6.1-prototype] - 2026-10-16 (Repository Navigation)
 
 ### Changed

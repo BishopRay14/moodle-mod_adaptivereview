@@ -46,3 +46,11 @@ Incorrect responses earn no mastery and schedule a recovery at one third of the
 active interval, rounded up to a minimum of one day. Repeated failures continue
 shortening the active recovery interval. Same-session remediation is recorded
 but remains ineligible for mastery gain.
+
+## Implementation status
+
+Step 4 of the repository MVP roadmap is complete. Deterministic tests cover
+every interval boundary, the 29-day perfect-retrieval path to 3.0, early and
+late success, recovery success, repeated failures, same-session remediation,
+the 5.9 ceiling, continued 270-day scheduling, and one-decimal display without
+discarding stored calculation precision.

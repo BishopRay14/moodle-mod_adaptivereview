@@ -93,6 +93,25 @@ final class review_manager_test extends \advanced_testcase {
     }
 
     /**
+     * Perfect on-time retrieval reaches 3.0 in the approved 29-day timeline.
+     */
+    public function test_perfect_retrieval_reaches_three_point_zero_after_twenty_nine_days(): void {
+        $mastery = 0.0;
+        $elapseddaystotal = 0;
+
+        // The first successful retrieval introduces the card immediately.
+        $mastery += review_manager::FULL_REVIEW_GAIN;
+        while ($mastery < 3.0) {
+            $intervaldays = review_manager::required_interval_days($mastery);
+            $elapseddaystotal += $intervaldays;
+            $mastery += review_manager::elapsed_mastery_gain($intervaldays * DAYSECS, $intervaldays);
+        }
+
+        $this->assertEquals(3.0, $mastery);
+        $this->assertSame(29, $elapseddaystotal);
+    }
+
+    /**
      * Early gains are proportional and cannot exceed the scheduled gain.
      */
     public function test_elapsed_gain_is_proportional_and_capped(): void {
@@ -206,6 +225,53 @@ final class review_manager_test extends \advanced_testcase {
     }
 
     /**
+     * Immediate remediation after a failure is history-only and earns no mastery.
+     */
+    public function test_same_session_recovery_cannot_increase_mastery(): void {
+        global $DB;
+
+        [$student, $activity, $card] = $this->create_review_context();
+        $base = 3500000;
+        $session = review_manager::start_session(
+            $activity->id,
+            $student->id,
+            review_manager::MODE_NEW,
+            $base
+        );
+
+        $failure = review_manager::record_attempt(
+            $session,
+            $card,
+            review_manager::RESPONSE_NOTYET,
+            $base
+        );
+        $recoveryduedate = $failure->nextreviewdate;
+
+        $immediatesuccess = review_manager::record_attempt(
+            $session,
+            $card,
+            review_manager::RESPONSE_KNOW,
+            $base + 60
+        );
+
+        $this->assertEquals(2, $immediatesuccess->attemptnumber);
+        $this->assertTrue((bool) $immediatesuccess->isremediation);
+        $this->assertFalse((bool) $immediatesuccess->masteryeligible);
+        $this->assertEquals(0.0, (float) $immediatesuccess->masterygain);
+        $this->assertEquals(0.0, (float) $immediatesuccess->masteryafter);
+        $this->assertEquals($recoveryduedate, $immediatesuccess->nextreviewdate);
+
+        $mastery = $DB->get_record('adaptivereview_mastery', [
+            'userid' => $student->id,
+            'cardid' => $card->id,
+        ], '*', MUST_EXIST);
+        $this->assertEquals(0.0, (float) $mastery->masteryscore);
+        $this->assertEquals(0, $mastery->count_correct);
+        $this->assertEquals(1, $mastery->count_wrong);
+        $this->assertEquals($recoveryduedate, $mastery->nextreviewdate);
+    }
+
+    /**
      * Repeated failures progressively shorten recovery without reducing mastery.
      */
     public function test_repeated_failures_shorten_recovery_interval(): void {
@@ -268,6 +334,7 @@ final class review_manager_test extends \advanced_testcase {
         $this->assertEquals(0.1, (float) $attempt->masterygain);
         $this->assertEquals(5.9, (float) $attempt->masteryafter);
         $this->assertEquals(270, $attempt->intervalafter);
+        $this->assertEquals($now + (270 * DAYSECS), $attempt->nextreviewdate);
     }
 
     /**

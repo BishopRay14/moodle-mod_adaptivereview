@@ -52,7 +52,7 @@ Exit criteria:
 - Support search, creation, editing, ordering, duplication, and archival.
 - Warn authors that edits to shared cards are visible in every consuming set.
 
-## Step 4: `mastery-v1` scheduler
+## Step 4: `mastery-v1` scheduler — Complete
 
 - Implement elapsed-time mastery gain and the approved interval bands.
 - Implement non-punitive failures and recovery scheduling.
