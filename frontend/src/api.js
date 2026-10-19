@@ -48,6 +48,12 @@ export const getBoxCounts = async () => {
     return result;
 };
 
+export const getStudentSummary = () => {
+    return moodleCall('mod_adaptivereview_get_student_summary', {
+        instanceid: config.instanceid,
+    });
+};
+
 export const startReviewSession = async (mode) => {
     const result = await moodleCall('mod_adaptivereview_start_review_session', {
         instanceid: config.instanceid,

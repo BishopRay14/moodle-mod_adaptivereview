@@ -119,6 +119,39 @@ final class external_test extends \core_external\tests\externallib_testcase {
     }
 
     /**
+     * Create a lifelong mastery summary for a test card.
+     *
+     * @param int $userid User ID.
+     * @param int $cardid Card ID.
+     * @param float $score Mastery score.
+     * @param int $nextreviewdate Next review timestamp.
+     * @param int $lastreviewdate Last successful review timestamp.
+     */
+    protected function create_mastery(
+        int $userid,
+        int $cardid,
+        float $score,
+        int $nextreviewdate,
+        int $lastreviewdate
+    ): void {
+        global $DB;
+
+        $DB->insert_record('adaptivereview_mastery', (object) [
+            'userid' => $userid,
+            'cardid' => $cardid,
+            'box_number' => min(5, (int) floor($score)),
+            'status' => 0,
+            'count_correct' => 1,
+            'count_wrong' => 0,
+            'last_reviewed' => $lastreviewdate,
+            'masteryscore' => $score,
+            'requiredintervaldays' => 21,
+            'nextreviewdate' => $nextreviewdate,
+            'lastreviewdate' => $lastreviewdate,
+        ]);
+    }
+
+    /**
      * Test getting cards by box.
      */
     public function test_get_cards_by_box() {
@@ -191,13 +224,84 @@ final class external_test extends \core_external\tests\externallib_testcase {
 
         $counts = external::get_box_counts($adaptivereview->id);
         $this->assertEquals(1, $counts[0]['count']);
-        $this->assertEquals(0, $counts[1]['count']);
+        $this->assertEquals(1, $counts[1]['count']);
         $this->assertCount(0, external::get_cards_by_box($adaptivereview->id, 1));
         $this->assertCount(2, external::get_cards_by_box($adaptivereview->id, 3));
 
         $this->expectException(\moodle_exception::class);
         $this->expectExceptionMessage(get_string('newcardsblockedbydue', 'mod_adaptivereview'));
         external::submit_answer($newcard->id, 'know', $session['sessionkey']);
+    }
+
+    /**
+     * Student summary uses the selected global set and the activity-specific goal.
+     */
+    public function test_student_summary_is_authoritative_for_shared_set(): void {
+        global $DB;
+
+        [$course, $student, $adaptivereview, $firstcard] = $this->create_adaptivereview_activity();
+        $secondcard = $this->add_card($adaptivereview, 2);
+        $thirdcard = $this->add_card($adaptivereview, 3);
+        $this->add_card($adaptivereview, 4);
+        $now = time();
+
+        $this->create_mastery($student->id, $firstcard->id, 0.5, $now + DAYSECS, $now - DAYSECS);
+        $this->create_mastery($student->id, $secondcard->id, 2.0, $now - 1, $now - (7 * DAYSECS));
+        $this->create_mastery($student->id, $thirdcard->id, 5.5, $now + DAYSECS, $now - DAYSECS);
+        $DB->set_field('adaptivereview', 'masterygoal', 4.0, ['id' => $adaptivereview->id]);
+
+        $secondactivity = $this->getDataGenerator()->create_module('adaptivereview', [
+            'course' => $course->id,
+            'name' => 'Second goal',
+            'setid' => $adaptivereview->setid,
+            'masterygoal' => 2.0,
+        ]);
+        $this->setUser($student);
+
+        $summary = external::get_student_summary($adaptivereview->id);
+        $summary = external_api::clean_returnvalue(external::get_student_summary_returns(), $summary);
+        $this->assertEquals(1, $summary['duecount']);
+        $this->assertEquals(1, $summary['newcount']);
+        $this->assertEquals(2, $summary['recentcount']);
+        $this->assertEquals(4, $summary['totalcards']);
+        $this->assertEquals(2.0, $summary['setmastery']);
+        $this->assertEquals(4.0, $summary['masterygoal']);
+        $this->assertEquals(40.6, $summary['progresspercent']);
+        $this->assertEquals(1, $summary['cardsatgoal']);
+        $this->assertFalse($summary['newavailable']);
+
+        $secondsummary = external::get_student_summary($secondactivity->id);
+        $secondsummary = external_api::clean_returnvalue(
+            external::get_student_summary_returns(),
+            $secondsummary
+        );
+        $this->assertEquals(2.0, $secondsummary['setmastery']);
+        $this->assertEquals(2.0, $secondsummary['masterygoal']);
+        $this->assertEquals(56.3, $secondsummary['progresspercent']);
+        $this->assertEquals(2, $secondsummary['cardsatgoal']);
+
+        // The dashboard shows the real New count even while the queue is locked.
+        $counts = external::get_box_counts($adaptivereview->id);
+        $this->assertEquals(1, $counts[1]['count']);
+        $this->assertCount(0, external::get_cards_by_box($adaptivereview->id, 1));
+    }
+
+    /**
+     * Browsing All Cards reads global state without creating retrieval evidence.
+     */
+    public function test_browsing_all_cards_does_not_change_mastery_or_history(): void {
+        global $DB;
+
+        [$course, $student, $adaptivereview, $card] = $this->create_adaptivereview_activity();
+        $this->setUser($student);
+
+        $cards = external::get_cards_by_box($adaptivereview->id, 3);
+
+        $this->assertCount(1, $cards);
+        $this->assertEquals($card->id, $cards[0]['id']);
+        $this->assertEquals(0, $DB->count_records('adaptivereview_mastery'));
+        $this->assertEquals(0, $DB->count_records('adaptivereview_sessions'));
+        $this->assertEquals(0, $DB->count_records('adaptivereview_attempts'));
     }
 
     /**

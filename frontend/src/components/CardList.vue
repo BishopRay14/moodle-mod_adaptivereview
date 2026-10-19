@@ -16,7 +16,7 @@
                 Set Mastery
               </div>
               <div class="text-3xl font-extrabold text-emerald-950 mt-1">
-                {{ setMastery }}
+                {{ Number(setMastery).toFixed(1) }}
               </div>
             </div>
 
@@ -34,13 +34,17 @@
             <div class="relative flex-1 h-2.5 rounded-full bg-emerald-100 overflow-hidden">
               <div
                 class="h-full rounded-full bg-emerald-500 transition-all"
-                :style="{ width: setProgressPercent + '%' }"
+                :style="{ width: progressPercent + '%' }"
               ></div>
             </div>
 
             <div class="shrink-0 text-amber-400 text-2xl leading-none" title="Goal">
               ★
             </div>
+          </div>
+          <div class="mt-2 flex items-center justify-between text-xs font-bold text-emerald-800">
+            <span>Progress Toward Goal: {{ Number(progressPercent).toFixed(1) }}%</span>
+            <span>{{ cardsAtGoal }} / {{ totalCards }} cards at goal</span>
           </div>
         </div>
 
@@ -127,6 +131,22 @@ const props = defineProps({
     type: Number,
     default: 4.0,
   },
+  setMastery: {
+    type: Number,
+    default: 0,
+  },
+  progressPercent: {
+    type: Number,
+    default: 0,
+  },
+  cardsAtGoal: {
+    type: Number,
+    default: 0,
+  },
+  totalCards: {
+    type: Number,
+    default: 0,
+  },
 });
 
 defineEmits(['review-card']);
@@ -150,10 +170,7 @@ const masteryScore = (card) => {
 const masteryLabel = (card) => masteryScore(card).toFixed(1);
 
 const masteryPercent = (card) => {
-  if (props.masteryGoal <= 0) {
-    return 0;
-  }
-  return Math.min(100, Math.round((masteryScore(card) / props.masteryGoal) * 100));
+  return Math.min(100, Math.max(0, Number(card.progresspercent ?? 0)));
 };
 
 const masteryStatus = (card) => {
@@ -163,7 +180,7 @@ const masteryStatus = (card) => {
     return 'Not started';
   }
 
-  if (score >= props.masteryGoal) {
+  if (card.atgoal) {
     return 'At goal';
   }
 
@@ -188,22 +205,4 @@ const filteredCards = computed(() => {
   });
 });
 
-const setMasteryValue = computed(() => {
-  if (!props.cards.length) {
-    return 0;
-  }
-
-  const total = props.cards.reduce((sum, card) => sum + masteryScore(card), 0);
-  return total / props.cards.length;
-});
-
-const setMastery = computed(() => setMasteryValue.value.toFixed(1));
-
-const setProgressPercent = computed(() => {
-  if (props.masteryGoal <= 0) {
-    return 0;
-  }
-
-  return Math.min(100, Math.round((setMasteryValue.value / props.masteryGoal) * 100));
-});
 </script>

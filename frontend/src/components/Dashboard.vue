@@ -22,6 +22,35 @@
       </div>
     </header>
 
+    <section
+      class="rc-mastery-summary"
+      :aria-label="getString('progress_toward_goal')"
+    >
+      <div class="rc-mastery-values">
+        <div>
+          <div class="rc-summary-label">{{ getString('set_mastery') }}</div>
+          <div class="rc-summary-value">{{ Number(summary.setmastery || 0).toFixed(1) }}</div>
+        </div>
+        <div class="rc-summary-goal">
+          <div class="rc-summary-label">{{ getString('goal') }}</div>
+          <div class="rc-summary-value">{{ Number(summary.masterygoal || masteryGoal).toFixed(1) }}</div>
+        </div>
+      </div>
+      <div class="rc-progress-heading">
+        <strong>{{ getString('progress_toward_goal') }}</strong>
+        <span>{{ Number(summary.progresspercent || 0).toFixed(1) }}%</span>
+      </div>
+      <div class="rc-progress-bar">
+        <div
+          class="rc-progress-fill"
+          :style="{ width: `${summary.progresspercent || 0}%` }"
+        ></div>
+      </div>
+      <p class="rc-progress-label">
+        {{ summary.cardsatgoal || 0 }} / {{ summary.totalcards || 0 }} {{ getString('cards_at_goal') }}
+      </p>
+    </section>
+
     <!-- ═══ BOX GRID ═══ -->
     <main>
       <div class="rc-grid" role="list">
@@ -31,11 +60,11 @@
           @click="startSession(box - 1)"
           @keydown.enter.space.prevent="startSession(box - 1)"
           class="rc-box"
-          :class="[getBoxColorClass(box - 1), (counts[box-1] || 0) === 0 ? 'rc-box--empty' : 'rc-box--active']"
-          :role="(counts[box-1] || 0) > 0 ? 'button' : 'listitem'"
-          :tabindex="(counts[box-1] || 0) > 0 ? 0 : -1"
+          :class="[getBoxColorClass(box - 1), getBoxStateClass(box - 1)]"
+          :role="isCategoryAvailable(box - 1) ? 'button' : 'listitem'"
+          :tabindex="isCategoryAvailable(box - 1) ? 0 : -1"
           :aria-label="getBoxName(box - 1) + ': ' + (counts[box-1] || 0) + ' ' + getString('cards')"
-          :aria-disabled="(counts[box-1] || 0) === 0"
+          :aria-disabled="!isCategoryAvailable(box - 1)"
         >
           <!-- colour stripe -->
           <div class="rc-box-stripe" aria-hidden="true"></div>
@@ -47,8 +76,12 @@
           <h2 class="rc-box-name">{{ getBoxName(box - 1) }}</h2>
 
           <!-- badge -->
-          <div v-if="counts[box-1] > 0" class="rc-badge rc-badge--active" aria-live="polite">
+          <div v-if="isCategoryAvailable(box - 1)" class="rc-badge rc-badge--active" aria-live="polite">
             <span class="rc-badge-dot" aria-hidden="true"></span>
+            {{ counts[box-1] }} {{ getString('cards') }}
+          </div>
+          <div v-else-if="box === 2 && counts[box-1] > 0" class="rc-badge rc-badge--locked">
+            <span aria-hidden="true">🔒</span>
             {{ counts[box-1] }} {{ getString('cards') }}
           </div>
           <div v-else-if="counts[box-1] === 0" class="rc-badge rc-badge--empty">
@@ -62,7 +95,7 @@
           </div>
 
           <!-- arrow -->
-          <div v-if="(counts[box-1] || 0) > 0" class="rc-box-arrow" aria-hidden="true">→</div>
+          <div v-if="isCategoryAvailable(box - 1)" class="rc-box-arrow" aria-hidden="true">→</div>
         </div>
       </div>
       <p class="rc-queue-note" aria-live="polite">
@@ -88,12 +121,8 @@
                   <div><strong>{{ getString('known_btn') }}</strong><p v-html="getString('known_desc')"></p></div>
                 </div>
                 <div class="rc-rule">
-                  <span class="rc-rule-dot rc-rule-dot--yellow" aria-hidden="true">↺</span>
-                  <div><strong>{{ getString('again_btn') }}</strong><p v-html="getString('again_desc')"></p></div>
-                </div>
-                <div class="rc-rule">
-                  <span class="rc-rule-dot rc-rule-dot--red" aria-hidden="true">↓</span>
-                  <div><strong>{{ getString('hard_btn') }}</strong><p v-html="getString('hard_desc')"></p></div>
+                  <span class="rc-rule-dot rc-rule-dot--red" aria-hidden="true">↺</span>
+                  <div><strong>{{ getString('notyet_btn') }}</strong><p v-html="getString('notyet_desc')"></p></div>
                 </div>
               </div>
               <div class="rc-modal-tip" v-html="getString('systemtip')"></div>
@@ -146,10 +175,27 @@
 
 <script setup>
 import { onMounted, ref, computed } from 'vue';
-import { getBoxCounts, getLogoUrl, resetProgress } from '../api';
+import { getStudentSummary, resetProgress } from '../api';
 
 const emit = defineEmits(['start-session']);
+const props = defineProps({
+    masteryGoal: {
+        type: Number,
+        default: 4.0,
+    },
+});
 const counts = ref({});
+const summary = ref({
+    duecount: 0,
+    newcount: 0,
+    recentcount: 0,
+    totalcards: 0,
+    setmastery: 0,
+    masterygoal: props.masteryGoal,
+    progresspercent: 0,
+    cardsatgoal: 0,
+    newavailable: true,
+});
 const showInfo = ref(false);
 const showReset = ref(false);
 const resetting = ref(false);
@@ -164,9 +210,18 @@ const totalCards = computed(() => {
     return Object.values(counts.value).reduce((s, v) => s + (v || 0), 0);
 });
 
-const loadCounts = async () => {
-    try { counts.value = await getBoxCounts(); }
-    catch (e) { console.error('Failed to load counts', e); }
+const loadSummary = async () => {
+    try {
+        summary.value = await getStudentSummary();
+        counts.value = {
+            0: summary.value.duecount,
+            1: summary.value.newcount,
+            2: summary.value.recentcount,
+            3: summary.value.totalcards,
+        };
+    } catch (e) {
+        console.error('Failed to load the student summary', e);
+    }
 };
 
 const FALLBACKS = {
@@ -180,6 +235,10 @@ const FALLBACKS = {
     newcardaccessdue: 'Complete Due Today before starting new cards.',
     progress_label: 'Cards meeting the goal',
     progress_aria: 'Progress: {mastered} of {total} cards have reached the mastery goal',
+    set_mastery: 'Set Mastery',
+    progress_toward_goal: 'Progress Toward Goal',
+    cards_at_goal: 'cards at goal',
+    goal: 'Goal',
     // Box levels
     box0: 'New',
     box1: 'Beginner',
@@ -191,11 +250,9 @@ const FALLBACKS = {
    systemtitle: 'Build Long-Term Mastery',
     systemintro: 'Adaptive Review helps learners retain knowledge through spaced repetition. New material is introduced gradually, while previously learned material is scheduled for review at the optimal time to strengthen long-term memory.',
     known_btn: 'I Know It',
-    known_desc: 'Your mastery of this card increases.',
-    again_btn: 'Review Again',
-    again_desc: 'Keep practicing this card before moving on.',
-    hard_btn: 'Needs Work',
-    hard_desc: 'This card will require additional review.',
+    known_desc: 'Successful retrieval increases mastery based on the time elapsed.',
+    notyet_btn: 'Not Yet',
+    notyet_desc: 'Mastery is preserved and a shorter recovery review is scheduled.',
     systemtip: '<strong>Tip:</strong> Completing your Due Today review consistently leads to the strongest long-term retention.',
     gotit: 'Got it!',
     // Reset
@@ -216,7 +273,7 @@ const getString = (key) => {
     return FALLBACKS[key] ?? key;
 };
 
-onMounted(loadCounts);
+onMounted(loadSummary);
 
 const getBoxIcon = (box) => [
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
@@ -242,8 +299,25 @@ const getBoxColorClass = (box) => [
     'rc-box--gray',     // All Cards
 ][box] ?? 'rc-box--blue';
 
+const isCategoryAvailable = (box) => {
+    if ((counts.value[box] ?? 0) <= 0) {
+        return false;
+    }
+    return box !== 1 || summary.value.newavailable;
+};
+
+const getBoxStateClass = (box) => {
+    if (isCategoryAvailable(box)) {
+        return 'rc-box--active';
+    }
+    if ((counts.value[box] ?? 0) > 0) {
+        return 'rc-box--locked';
+    }
+    return 'rc-box--empty';
+};
+
 const startSession = (boxnumber) => {
-    if ((counts.value[boxnumber] ?? 0) > 0) emit('start-session', boxnumber, totalCards.value);
+    if (isCategoryAvailable(boxnumber)) emit('start-session', boxnumber, totalCards.value);
 };
 
 const doReset = async () => {
@@ -253,7 +327,7 @@ const doReset = async () => {
     try {
         const appConfig = JSON.parse(document.getElementById('v-app-mod-adaptivereview')?.dataset?.config || '{}');
         await resetProgress(appConfig.instanceid);
-        await loadCounts();
+        await loadSummary();
         showReset.value = false;
     } catch (e) {
         resetError.value = 'Error resetting progress: ' + (e.message || 'Unknown error');
@@ -422,6 +496,44 @@ const doReset = async () => {
   margin: 0 0 28px;
 }
 
+.rc-mastery-summary {
+  max-width: 900px;
+  margin: 0 auto 24px;
+  padding: 22px 24px 18px;
+  border: 1px solid #a7f3d0;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ecfdf5, #f8fafc);
+}
+.rc-mastery-summary .rc-progress-label { margin-bottom: 0; }
+.rc-mastery-values,
+.rc-progress-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+.rc-summary-goal { text-align: right; }
+.rc-summary-label {
+  color: #047857;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.rc-summary-value {
+  margin-top: 2px;
+  color: #064e3b;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.rc-progress-heading {
+  align-items: center;
+  margin: 20px 0 8px;
+  color: #334155;
+  font-size: 0.84rem;
+}
+
 /* ─── grid ──────────────── */
 .rc-grid {
   display: grid;
@@ -516,6 +628,10 @@ const doReset = async () => {
   opacity: 0.45;
   border-style: dashed;
 }
+.rc-box--locked {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
 .rc-box:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
 .rc-box:focus:not(:focus-visible) { outline: none; }
 
@@ -571,6 +687,11 @@ const doReset = async () => {
   color: #94a3b8;
   border-color: #e2e8f0;
   border-style: dashed;
+}
+.rc-badge--locked {
+  background: #fff7ed;
+  color: #9a3412;
+  border-color: #fed7aa;
 }
 .rc-badge--loading { color: #94a3b8; }
 .rc-badge-dot {

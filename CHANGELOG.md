@@ -2,6 +2,19 @@
 
 Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.8.0-prototype] - 2026-10-18 (Authoritative Student Experience)
+
+### Added
+- Added a server-owned student summary for Due Today, New, Recently Learned, and All Cards.
+- Added Set Mastery, activity-specific mastery goals, per-card goal progress, and cards-at-goal reporting.
+- Added automated coverage for shared-set summaries and read-only card browsing.
+
+### Changed
+- The dashboard now displays authoritative global card state instead of calculating progress from rounded browser data.
+- New cards remain visible as a count while due reviews temporarily lock the New queue.
+- All Cards remains browse-only and cannot create mastery, session, or attempt evidence.
+- Updated student language to the approved `I Know It` / `Not Yet` mastery model.
+
 ## [0.7.0-prototype] - 2026-10-17 (Mastery-v1 Scheduler Milestone)
 
 ### Added

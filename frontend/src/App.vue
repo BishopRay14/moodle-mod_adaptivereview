@@ -2,6 +2,7 @@
   <div class="min-h-[600px] w-full bg-slate-50 font-sans text-slate-900 py-6 px-4 rounded-3xl" style="font-family: 'Inter', system-ui, sans-serif;">
     <Dashboard
       v-if="!sessionActive && !allCardsMode && !recentChoiceMode"
+      :mastery-goal="masteryGoal"
       @start-session="handleStartSession"
     />
 
@@ -85,6 +86,10 @@
       <CardList
         :cards="allCards"
         :mastery-goal="masteryGoal"
+        :set-mastery="studentSummary.setmastery"
+        :progress-percent="studentSummary.progresspercent"
+        :cards-at-goal="studentSummary.cardsatgoal"
+        :total-cards="studentSummary.totalcards"
         @review-card="handleLibraryCard"
       />
     </div>
@@ -179,6 +184,7 @@ import CardList from './components/CardList.vue';
 import {
     completeReviewSession,
     getCardsByBox,
+    getStudentSummary,
     startReviewSession,
     submitAnswer,
 } from './api';
@@ -234,6 +240,12 @@ const reviewMode = ref('review');
 const firstSessionResponses = ref({});
 const reviewSessionKey = ref(null);
 const pendingAnswerSave = ref(null);
+const studentSummary = ref({
+    setmastery: 0,
+    progresspercent: 0,
+    cardsatgoal: 0,
+    totalcards: 0,
+});
 
 const currentCard = computed(() => sessionCards.value[currentCardIndex.value]);
 
@@ -298,10 +310,15 @@ const handleStartSession = async (boxnumber) => {
     reviewMode.value = 'review';
 
     try {
-        const cards = await getCardsByBox(boxnumber);
+        const requests = [getCardsByBox(boxnumber)];
+        if (boxnumber === 3) {
+            requests.push(getStudentSummary());
+        }
+        const [cards, summary] = await Promise.all(requests);
 
         if (boxnumber === 3) {
             allCards.value = cards;
+            studentSummary.value = summary;
             allCardsMode.value = true;
             return;
         }

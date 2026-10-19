@@ -115,6 +115,10 @@ $string['hint'] = 'Hint';
 // Progress bar
 $string['progress_label'] = 'cards meeting the goal';
 $string['progress_aria'] = 'Progress: {mastered} of {total} cards have reached the mastery goal';
+$string['set_mastery'] = 'Set Mastery';
+$string['progress_toward_goal'] = 'Progress Toward Goal';
+$string['cards_at_goal'] = 'cards at goal';
+$string['goal'] = 'Goal';
 
 
 
@@ -316,10 +320,12 @@ $string['howitworks'] = 'How does Adaptive Review work?';
 $string['cards'] = 'Cards';
 
 $string['systemtitle'] = 'Build Long-Term Mastery';
-$string['systemintro'] = 'Adaptive Review uses spaced repetition to help learners remember information for the long term. Material you know well is reviewed less frequently, while challenging concepts return more often until they become mastered.';
+$string['systemintro'] = 'Adaptive Review builds long-term retention through successful retrieval over increasing periods of time. Every card continues returning for review, even after reaching the activity goal.';
 
 $string['known_btn'] = 'I Know It';
-$string['known_desc'] = 'The card advances toward mastery.';
+$string['known_desc'] = 'Successful retrieval increases mastery based on the time elapsed.';
+$string['notyet_btn'] = 'Not Yet';
+$string['notyet_desc'] = 'Your mastery is preserved and a shorter recovery review is scheduled.';
 
 $string['again_btn'] = 'Review Again';
 $string['again_desc'] = 'Keep the card at its current level for more practice.';
@@ -339,9 +345,9 @@ $string['cardxofy_x'] = 'Card';
 $string['cardxofy_y'] = 'of';
 $string['loadingcards'] = 'Shuffling cards...';
 $string['sessiondone'] = 'All done!';
-$string['sessiondonedesc'] = 'Good job. Return to the dashboard for the next deck.';
+$string['sessiondonedesc'] = 'Good job. Return to the dashboard to see your updated schedule.';
 $string['feedback_grand_title'] = 'Masterpiece!';
-$string['feedback_grand_desc'] = 'Congratulations! You successfully moved all cards into the Expert deck and reviewed them flawlessly. You have truly mastered this subject!';
+$string['feedback_grand_desc'] = 'Excellent retrieval. Continue returning when reviews are due to strengthen long-term retention.';
 $string['feedback_perfect_title'] = 'Strong Result';
 $string['feedback_perfect_desc'] = 'You correctly Adaptive Reviewed all of the content. You have a solid grasp of this material.';
 $string['feedback_good_title'] = 'Solid Performance';

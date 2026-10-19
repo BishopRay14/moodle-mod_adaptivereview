@@ -42,8 +42,8 @@ $PAGE->set_context($context);
 // Export strings for Vue frontend
 $vuestrings = [
     'dashboardtitle', 'dashboardsbtitle', 'howitworks', 'cards', 'systemtitle', 
-    'systemintro', 'known_btn', 'known_desc', 'again_btn', 'again_desc', 
-    'hard_btn', 'hard_desc', 'systemtip', 'gotit', 'showhint', 'hint',
+    'systemintro', 'known_btn', 'known_desc', 'notyet_btn', 'notyet_desc',
+    'systemtip', 'gotit', 'showhint', 'hint',
     'taptoflip', 'action_back', 'action_stay', 'action_next', 'backtodashboard', 
     'cardxofy_x', 'cardxofy_y', 'loadingcards', 'sessiondone', 'sessiondonedesc', 
     'completed', 'error_loading_cards', 'error_saving_answer', 'box0', 'box1', 'box2', 'box3', 'box4', 'box5', 'queue_due', 'queue_new', 'queue_recent', 'queue_all',
@@ -51,6 +51,7 @@ $vuestrings = [
     'reset_progress', 'reset_progress_confirm_title', 'reset_progress_confirm_msg',
     'reset_progress_btn', 'reset_progress_cancel', 'reset_progress_done',
     'progress_label', 'progress_aria',
+    'set_mastery', 'progress_toward_goal', 'cards_at_goal', 'goal',
     'feedback_grand_title', 'feedback_grand_desc', 'feedback_perfect_title', 'feedback_perfect_desc',
     'feedback_good_title', 'feedback_good_desc', 'feedback_okay_title', 'feedback_okay_desc',
     'feedback_learn_title', 'feedback_learn_desc',

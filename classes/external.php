@@ -30,6 +30,7 @@ use core_external\external_single_structure;
 use core_external\external_value;
 use mod_adaptivereview\local\review_manager;
 use mod_adaptivereview\local\review_queue_policy;
+use mod_adaptivereview\local\student_summary;
 
 class external extends external_api {
 
@@ -40,7 +41,7 @@ class external extends external_api {
     }
 
     public static function get_box_counts($instanceid) {
-        global $DB, $USER;
+        global $USER;
         
         $params = self::validate_parameters(self::get_box_counts_parameters(), [
             'instanceid' => $instanceid,
@@ -54,68 +55,13 @@ class external extends external_api {
         self::validate_context($context);
         require_capability('mod/adaptivereview:view', $context);
 
-        $userid = $USER->id;
-        $instanceid = $params['instanceid'];
-        $now = time();
-
-        // Frontend dashboard category IDs:
-        // 0 = Due Today
-        // 1 = New
-        // 2 = Recently Learned
-        // 3 = All Cards
-
-        $count_due = review_queue_policy::due_count($instanceid, $userid, $now);
-
-        $count_new = $DB->count_records_sql(
-            "SELECT COUNT(*)
-               FROM {adaptivereview_cards} c
-               JOIN {adaptivereview_set_cards} sc ON sc.cardid = c.id
-               JOIN {adaptivereview} ar ON ar.setid = sc.setid
-          LEFT JOIN {adaptivereview_mastery} p
-                 ON c.id = p.cardid AND p.userid = :userid
-              WHERE ar.id = :instanceid
-                AND c.archived = 0
-                AND p.id IS NULL",
-            [
-                'instanceid' => $instanceid,
-                'userid' => $userid,
-            ]
-        );
-        $count_new = $count_due > 0 ? 0 : (int) $count_new;
-
-        $count_recent = $DB->count_records_sql(
-            "SELECT COUNT(*)
-               FROM {adaptivereview_cards} c
-               JOIN {adaptivereview_set_cards} sc ON sc.cardid = c.id
-               JOIN {adaptivereview} ar ON ar.setid = sc.setid
-               JOIN {adaptivereview_mastery} p
-                 ON c.id = p.cardid
-              WHERE ar.id = :instanceid
-                AND c.archived = 0
-                AND p.userid = :userid
-                AND p.lastreviewdate > 0
-                AND p.nextreviewdate > :now",
-            [
-                'instanceid' => $instanceid,
-                'userid' => $userid,
-                'now' => $now,
-            ]
-        );
-
-        $count_all = $DB->count_records_sql(
-            "SELECT COUNT(*)
-               FROM {adaptivereview_set_cards} sc
-               JOIN {adaptivereview_cards} c ON c.id = sc.cardid
-               JOIN {adaptivereview} ar ON ar.setid = sc.setid
-              WHERE ar.id = :instanceid AND c.archived = 0",
-            ['instanceid' => $instanceid]
-        );
+        $summary = student_summary::get((int) $params['instanceid'], (int) $USER->id);
 
         return [
-            ['box_number' => 0, 'count' => $count_due],
-            ['box_number' => 1, 'count' => $count_new],
-            ['box_number' => 2, 'count' => $count_recent],
-            ['box_number' => 3, 'count' => $count_all],
+            ['box_number' => 0, 'count' => $summary->duecount],
+            ['box_number' => 1, 'count' => $summary->newcount],
+            ['box_number' => 2, 'count' => $summary->recentcount],
+            ['box_number' => 3, 'count' => $summary->totalcards],
         ];
     }
 
@@ -126,6 +72,42 @@ class external extends external_api {
                 'count' => new external_value(PARAM_INT, 'The number of cards in this category'),
             ])
         );
+    }
+
+    public static function get_student_summary_parameters() {
+        return new external_function_parameters([
+            'instanceid' => new external_value(PARAM_INT, 'The Adaptive Review instance ID'),
+        ]);
+    }
+
+    public static function get_student_summary($instanceid) {
+        global $USER;
+
+        $params = self::validate_parameters(self::get_student_summary_parameters(), [
+            'instanceid' => $instanceid,
+        ]);
+        $cm = get_coursemodule_from_instance('adaptivereview', $params['instanceid'], 0, false, MUST_EXIST);
+        $context = \context_module::instance($cm->id);
+        self::validate_context($context);
+        require_capability('mod/adaptivereview:view', $context);
+
+        $summary = student_summary::get((int) $params['instanceid'], (int) $USER->id);
+
+        return (array) $summary;
+    }
+
+    public static function get_student_summary_returns() {
+        return new external_single_structure([
+            'duecount' => new external_value(PARAM_INT, 'Cards currently due'),
+            'newcount' => new external_value(PARAM_INT, 'Unstarted cards in the selected set'),
+            'recentcount' => new external_value(PARAM_INT, 'Learned cards not currently due'),
+            'totalcards' => new external_value(PARAM_INT, 'Active cards in the selected set'),
+            'setmastery' => new external_value(PARAM_FLOAT, 'Average lifelong mastery across the set'),
+            'masterygoal' => new external_value(PARAM_FLOAT, 'Activity-specific mastery goal'),
+            'progresspercent' => new external_value(PARAM_FLOAT, 'Average capped progress toward the goal'),
+            'cardsatgoal' => new external_value(PARAM_INT, 'Cards at or above the activity goal'),
+            'newavailable' => new external_value(PARAM_BOOL, 'Whether new-card review may begin'),
+        ]);
     }
 
     public static function get_cards_by_box_parameters() {
@@ -161,7 +143,7 @@ class external extends external_api {
         $now = time();
 
         $adaptivereview = $DB->get_record('adaptivereview', ['id' => $instanceid],
-            'itemorder, setid', MUST_EXIST);
+            'itemorder, setid, masterygoal', MUST_EXIST);
         $order_by = ($adaptivereview->itemorder == 1) ? "ORDER BY sc.sortorder ASC, c.id ASC" : "";
 
         $select = "SELECT c.*,
@@ -246,6 +228,10 @@ class external extends external_api {
 
         $result = [];
         foreach ($cards as $card) {
+            $masteryscore = min(
+                review_manager::MAX_MASTERY,
+                max(0.0, (float) $card->masteryscore)
+            );
             $resolve = function($text) {
                 if (preg_match('/^##(demo_[a-z0-9]+)##$/', $text, $m)) {
                     return get_string($m[1], 'mod_adaptivereview');
@@ -258,7 +244,10 @@ class external extends external_api {
                 'answer' => $resolve($card->answer),
                 'hint' => $resolve($card->hint ? $card->hint : ''),
                 'category' => $card->category ? $card->category : '',
-                'masteryscore' => round((float)$card->masteryscore, 1),
+                'masteryscore' => round($masteryscore, 1),
+                'progresspercent' => round(min(100.0,
+                    ($masteryscore / max(0.1, (float) $adaptivereview->masterygoal)) * 100), 1),
+                'atgoal' => $masteryscore >= (float) $adaptivereview->masterygoal,
                 'requiredintervaldays' => (int)$card->requiredintervaldays,
                 'nextreviewdate' => (int)$card->nextreviewdate,
                 'lastreviewdate' => (int)$card->lastreviewdate,
@@ -281,6 +270,8 @@ class external extends external_api {
                 'hint' => new external_value(PARAM_CLEANHTML, 'Optional hint', VALUE_OPTIONAL),
                 'category' => new external_value(PARAM_TEXT, 'Optional category', VALUE_OPTIONAL),
                 'masteryscore' => new external_value(PARAM_FLOAT, 'Current mastery score'),
+                'progresspercent' => new external_value(PARAM_FLOAT, 'Progress toward this activity goal'),
+                'atgoal' => new external_value(PARAM_BOOL, 'Whether this card has reached the activity goal'),
                 'requiredintervaldays' => new external_value(PARAM_INT, 'Required interval days'),
                 'nextreviewdate' => new external_value(PARAM_INT, 'Next review timestamp'),
                 'lastreviewdate' => new external_value(PARAM_INT, 'Last review timestamp'),

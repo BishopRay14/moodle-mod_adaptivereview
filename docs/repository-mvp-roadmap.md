@@ -61,7 +61,7 @@ Exit criteria:
 - Cover boundary, early, due, late, recovery, repeated-failure, and maximum
   mastery scenarios with deterministic tests.
 
-## Step 5: Authoritative student experience
+## Step 5: Authoritative student experience — Complete
 
 - Drive New, Due Today, Recently Learned, and All Cards from global card state.
 - Calculate Set Mastery from the cards in the activity's selected set.
