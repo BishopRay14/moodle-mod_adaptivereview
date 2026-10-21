@@ -265,9 +265,9 @@ class external extends external_api {
         return new external_multiple_structure(
             new external_single_structure([
                 'id' => new external_value(PARAM_INT, 'Card ID'),
-                'question' => new external_value(PARAM_CLEANHTML, 'Question text'),
-                'answer' => new external_value(PARAM_CLEANHTML, 'Answer text'),
-                'hint' => new external_value(PARAM_CLEANHTML, 'Optional hint', VALUE_OPTIONAL),
+                'question' => new external_value(PARAM_RAW, 'Question HTML'),
+                'answer' => new external_value(PARAM_RAW, 'Answer HTML'),
+                'hint' => new external_value(PARAM_RAW, 'Optional hint HTML', VALUE_OPTIONAL),
                 'category' => new external_value(PARAM_TEXT, 'Optional category', VALUE_OPTIONAL),
                 'masteryscore' => new external_value(PARAM_FLOAT, 'Current mastery score'),
                 'progresspercent' => new external_value(PARAM_FLOAT, 'Progress toward this activity goal'),

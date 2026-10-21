@@ -68,7 +68,7 @@ Exit criteria:
 - Calculate Progress Toward Goal against the activity-specific goal.
 - Keep browsing distinct from retrieval evidence.
 
-## Step 6: Moodle lifecycle coverage
+## Step 6: Moodle lifecycle coverage — Complete
 
 - Update privacy export and deletion.
 - Update activity backup and restore behavior for shared repository content.

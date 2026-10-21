@@ -159,6 +159,14 @@ $string['privacy:metadata:adaptivereview_attempts:previousduedate'] = 'The due t
 $string['privacy:metadata:adaptivereview_attempts:nextreviewdate'] = 'The due timestamp after the attempt.';
 $string['privacy:metadata:adaptivereview_attempts:algorithmversion'] = 'The scheduling algorithm version used for the attempt.';
 $string['privacy:metadata:adaptivereview_attempts:timecreated'] = 'The timestamp when the attempt was recorded.';
+$string['privacy:metadata:adaptivereview_cards'] = 'Authorship information for global Adaptive Review cards.';
+$string['privacy:metadata:adaptivereview_cards:createdby'] = 'The user who created the card.';
+$string['privacy:metadata:adaptivereview_cards:modifiedby'] = 'The user who most recently modified the card.';
+$string['privacy:metadata:adaptivereview_sets'] = 'Authorship information for global Adaptive Review sets.';
+$string['privacy:metadata:adaptivereview_sets:createdby'] = 'The user who created the set.';
+$string['privacy:metadata:adaptivereview_sets:modifiedby'] = 'The user who most recently modified the set.';
+$string['lifelongmastery'] = 'Lifelong mastery';
+$string['repositoryauthorship'] = 'Repository authorship';
 $string['reviewhistory'] = 'Review history';
 $string['reviewsessions'] = 'Review sessions';
 

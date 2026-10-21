@@ -2,6 +2,21 @@
 
 Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.9.0-prototype] - 2026-10-20 (Moodle Lifecycle Coverage)
+
+### Added
+- Added privacy coverage that separates global lifelong mastery from activity-specific review history.
+- Added real backup/restore integration coverage for shared cards, participating users, archived content, sessions, and attempts.
+- Added browser scenarios for repository-set reuse and a student's complete new-card review session.
+- Added permission and archival-history regression coverage.
+
+### Changed
+- Activity-level privacy deletion now preserves global mastery while system-level erasure removes it and anonymizes repository authorship.
+- User-data backups include mastery only for students who participated in the backed-up activity.
+- Restores preserve archived card state and correctly remap mastery, session, and attempt relationships into an isolated restored set.
+- Tutorial-card HTML now satisfies the review service contract and opens correctly in a new activity.
+- Completed and verified Step 6 of the global repository MVP roadmap.
+
 ## [0.8.0-prototype] - 2026-10-18 (Authoritative Student Experience)
 
 ### Added

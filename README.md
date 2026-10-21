@@ -82,10 +82,11 @@ Moodle 5.2 and 5.3 lines on supported PHP and PostgreSQL versions.
 
 Adaptive Review is currently under active development.
 
-The current version includes the global repository data foundation, stable card
-identities, reusable sets, migration coverage, and the existing mastery
-workflow. The instructor repository chooser and adaptive scheduling engine are
-the next development phases.
+The current prototype includes the global repository, reusable sets,
+course-integrated set selection, lifelong student-card mastery, the
+`mastery-v1` scheduler, the authoritative student dashboard, and Moodle
+privacy and backup/restore lifecycle coverage. The next phase is the MVP
+release-candidate audit and administrator documentation.
 
 ## License
 

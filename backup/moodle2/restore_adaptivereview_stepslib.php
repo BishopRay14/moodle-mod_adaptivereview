@@ -84,7 +84,9 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
         $setid = $DB->get_field('adaptivereview', 'setid', ['id' => $activityid], MUST_EXIST);
         $sortorder = $data->sortorder ?? 0;
         unset($data->sortorder);
-        $data->archived = 0;
+        // Preserve archival state so hidden repository content does not become
+        // student-visible merely because an activity was restored.
+        $data->archived = (int) ($data->archived ?? 0);
         $data->createdby = 0;
         $data->modifiedby = 0;
         $data->timecreated = time();
@@ -97,6 +99,7 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
             'sortorder' => $sortorder,
             'timecreated' => time(),
         ]);
+        $this->set_mapping('adaptivereview_item', $oldid, $newcardid);
         $this->set_mapping('adaptivereview_cards', $oldid, $newcardid);
     }
 
@@ -112,7 +115,7 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
             return; // Don't restore if the user isn't found
         }
 
-        $data->cardid = $this->get_new_parentid('adaptivereview_cards');
+        $data->cardid = $this->get_new_parentid('adaptivereview_item');
         $data->last_reviewed = $this->apply_date_offset($data->last_reviewed);
         $data->nextreviewdate = $this->apply_date_offset($data->nextreviewdate);
         $data->lastreviewdate = $this->apply_date_offset($data->lastreviewdate);
@@ -137,6 +140,7 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
         $data->timecompleted = $this->apply_date_offset($data->timecompleted);
 
         $newsessionid = $DB->insert_record('adaptivereview_sessions', $data);
+        $this->set_mapping('adaptivereview_session', $oldid, $newsessionid);
         $this->set_mapping('adaptivereview_sessions', $oldid, $newsessionid);
     }
 
@@ -145,7 +149,7 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
 
         $data = (object) $data;
         $oldid = $data->id;
-        $data->sessionid = $this->get_new_parentid('adaptivereview_sessions');
+        $data->sessionid = $this->get_new_parentid('adaptivereview_session');
         $data->cardid = $this->get_mappingid('adaptivereview_cards', $data->cardid);
         if (!$data->sessionid || !$data->cardid) {
             return;

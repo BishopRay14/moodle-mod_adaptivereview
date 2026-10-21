@@ -18,6 +18,7 @@ namespace mod_adaptivereview;
 
 use mod_adaptivereview\local\review_manager;
 use mod_adaptivereview\local\repository_manager;
+use mod_adaptivereview\local\student_summary;
 
 /**
  * Repository identity and sharing tests.
@@ -157,5 +158,68 @@ final class repository_test extends \advanced_testcase {
 
         $this->assertEquals(3.0, (float) $firstactivity->masterygoal);
         $this->assertEquals(4.5, (float) $secondactivity->masterygoal);
+    }
+
+    /**
+     * Archiving hides a card without destroying mastery or retrieval history.
+     */
+    public function test_archiving_card_preserves_history(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $course = $this->getDataGenerator()->create_course();
+        $student = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+        $activity = $this->getDataGenerator()->create_module('adaptivereview', ['course' => $course->id]);
+        $cardids = $DB->get_fieldset_select('adaptivereview_set_cards', 'cardid', 'setid = ?',
+            [$activity->setid], 'sortorder ASC');
+        $card = $DB->get_record('adaptivereview_cards', ['id' => reset($cardids)], '*', MUST_EXIST);
+
+        $session = review_manager::start_session((int) $activity->id, (int) $student->id,
+            review_manager::MODE_NEW, 1000000);
+        review_manager::record_attempt($session, $card, review_manager::RESPONSE_KNOW, 1000010);
+        repository_manager::archive_card((int) $card->id, (int) get_admin()->id, 1000020);
+
+        $this->assertTrue($DB->record_exists('adaptivereview_set_cards', [
+            'setid' => $activity->setid,
+            'cardid' => $card->id,
+        ]));
+        $this->assertTrue($DB->record_exists('adaptivereview_mastery', [
+            'userid' => $student->id,
+            'cardid' => $card->id,
+        ]));
+        $this->assertEquals(1, $DB->count_records('adaptivereview_sessions'));
+        $this->assertEquals(1, $DB->count_records('adaptivereview_attempts'));
+        $summary = student_summary::get((int) $activity->id, (int) $student->id, 1000030);
+        $this->assertEquals(4, $summary->totalcards);
+    }
+
+    /**
+     * Students can study but only system repository authors can edit globally.
+     */
+    public function test_repository_capability_and_student_visibility(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $course = $this->getDataGenerator()->create_course();
+        $student = $this->getDataGenerator()->create_user();
+        $teacher = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+        $this->getDataGenerator()->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $activity = $this->getDataGenerator()->create_module('adaptivereview', ['course' => $course->id]);
+        $cm = get_coursemodule_from_instance('adaptivereview', $activity->id, $course->id, false, MUST_EXIST);
+        $modulecontext = \context_module::instance($cm->id);
+        $systemcontext = \context_system::instance();
+
+        $this->assertTrue(has_capability('mod/adaptivereview:view', $modulecontext, $student));
+        $this->assertFalse(has_capability('moodle/course:manageactivities', $modulecontext, $student));
+        $this->assertFalse(has_capability('mod/adaptivereview:manageglobalrepository', $systemcontext, $student));
+        $this->assertTrue(has_capability('moodle/course:manageactivities', $modulecontext, $teacher));
+        $this->assertFalse(has_capability('mod/adaptivereview:manageglobalrepository', $systemcontext, $teacher));
+
+        $manager = $this->getDataGenerator()->create_user();
+        $managerrole = $DB->get_record('role', ['shortname' => 'manager'], '*', MUST_EXIST);
+        role_assign($managerrole->id, $manager->id, $systemcontext->id);
+        $this->assertTrue(has_capability('mod/adaptivereview:manageglobalrepository', $systemcontext, $manager));
     }
 }

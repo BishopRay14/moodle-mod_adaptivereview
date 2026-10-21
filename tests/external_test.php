@@ -172,6 +172,26 @@ final class external_test extends \core_external\tests\externallib_testcase {
     }
 
     /**
+     * Built-in tutorial cards satisfy the external-service return contract.
+     */
+    public function test_demo_cards_satisfy_return_contract(): void {
+        $course = $this->getDataGenerator()->create_course();
+        $student = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
+        $adaptivereview = $this->getDataGenerator()->create_module('adaptivereview', [
+            'course' => $course->id,
+        ]);
+        $this->setUser($student);
+
+        $result = external::get_cards_by_box($adaptivereview->id, 1);
+        $result = external_api::clean_returnvalue(external::get_cards_by_box_returns(), $result);
+
+        $this->assertCount(5, $result);
+        $questions = array_column($result, 'question');
+        $this->assertStringContainsString('<br>', implode(' ', $questions));
+    }
+
+    /**
      * The New queue exposes every unstarted card when no reviews are due.
      */
     public function test_new_queue_has_no_daily_cap(): void {

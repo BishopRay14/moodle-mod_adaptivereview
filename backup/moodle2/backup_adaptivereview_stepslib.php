@@ -33,7 +33,7 @@ class backup_adaptivereview_activity_structure_step extends backup_activity_stru
 
         $items = new backup_nested_element('items');
         $item = new backup_nested_element('item', ['id'], [
-            'question', 'answer', 'hint', 'category', 'sortorder'
+            'question', 'answer', 'hint', 'category', 'archived', 'sortorder'
         ]);
 
         $masteries = new backup_nested_element('masteries');
@@ -78,7 +78,21 @@ class backup_adaptivereview_activity_structure_step extends backup_activity_stru
 
         // Export user progress only if userinfo is included in the backup.
         if ($this->get_setting_value('userinfo')) {
-            $mastery->set_source_table('adaptivereview_mastery', ['cardid' => backup::VAR_PARENTID]);
+            // Lifelong mastery is global. Only include learners who actually
+            // have a review session in this activity, never every user who has
+            // encountered the shared card elsewhere.
+            $mastery->set_source_sql(
+                "SELECT m.*
+                   FROM {adaptivereview_mastery} m
+                  WHERE m.cardid = ?
+                    AND EXISTS (
+                        SELECT 1
+                          FROM {adaptivereview_sessions} s
+                         WHERE s.adaptivereviewid = ?
+                           AND s.userid = m.userid
+                    )",
+                [backup::VAR_PARENTID, backup::VAR_ACTIVITYID]
+            );
             $session->set_source_table('adaptivereview_sessions', ['adaptivereviewid' => backup::VAR_PARENTID]);
             $attempt->set_source_table('adaptivereview_attempts', ['sessionid' => backup::VAR_PARENTID]);
         }
