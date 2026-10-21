@@ -9,6 +9,8 @@ Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokument
 - Added real backup/restore integration coverage for shared cards, participating users, archived content, sessions, and attempts.
 - Added browser scenarios for repository-set reuse and a student's complete new-card review session.
 - Added permission and archival-history regression coverage.
+- Added administrator setup and dedicated repository-author role documentation.
+- Added an evidence-based MVP release audit with explicit local pass results and remaining CI gates.
 
 ### Changed
 - Activity-level privacy deletion now preserves global mastery while system-level erasure removes it and anonymizes repository authorship.

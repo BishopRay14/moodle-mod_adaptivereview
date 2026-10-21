@@ -126,8 +126,8 @@ Step 2 introduces a system-level capability named conceptually
 `mod/adaptivereview:manageglobalrepository`.
 
 - Administrators receive it automatically.
-- The institution may assign it at system or category context to an Adaptive
-  Review Author role.
+- The institution may assign it at system context to an Adaptive Review Author
+  role.
 - The capability permits management of every card and set in its context.
 - Course access alone does not grant repository-wide editing.
 - Student access remains governed by activity visibility and the existing view

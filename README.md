@@ -22,16 +22,20 @@ Current prototype includes:
 - Recently Learned browse and practice modes
 - Responsive user interface
 
+Administrator installation, repository permissions, privacy behavior, and
+backup policy are documented in
+[`docs/administrator-setup.md`](docs/administrator-setup.md).
+
 ## Planned Features
 
-The long-term vision includes:
+Post-MVP enhancements include:
 
-- Time-based adaptive scheduling engine
-- Shared institutional content libraries
 - CSV import/export
 - Analytics dashboard
-- Instructor authoring tools
-- Advanced mastery algorithms
+- Confidence and difficulty weighting
+- Personalized interval adjustment
+- Competency and learning-outcome mapping
+- Program-level mastery analytics
 - Moodle gradebook integration based on instructor Goals
 
 ## Technology
@@ -82,11 +86,13 @@ Moodle 5.2 and 5.3 lines on supported PHP and PostgreSQL versions.
 
 Adaptive Review is currently under active development.
 
-The current prototype includes the global repository, reusable sets,
+The current MVP candidate includes the global repository, reusable sets,
 course-integrated set selection, lifelong student-card mastery, the
 `mastery-v1` scheduler, the authoritative student dashboard, and Moodle
-privacy and backup/restore lifecycle coverage. The next phase is the MVP
-release-candidate audit and administrator documentation.
+privacy and backup/restore lifecycle coverage.
+
+Release qualification results and remaining gates are recorded in
+[`docs/mvp-release-audit.md`](docs/mvp-release-audit.md).
 
 ## License
 

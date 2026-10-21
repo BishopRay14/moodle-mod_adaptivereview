@@ -76,7 +76,7 @@ Exit criteria:
 - Add browser coverage for set selection and the complete student review flow.
 - Verify archival never destroys mastery or attempt history.
 
-## Step 7: MVP release candidate
+## Step 7: MVP release candidate — In progress
 
 - Run lint, Moodle Code Checker, PHPDoc, XMLDB validation, PHPUnit, and browser
   tests.
@@ -84,3 +84,9 @@ Exit criteria:
 - Confirm the development database is preserved.
 - Document administrator setup and repository-author role assignment.
 - Prepare a focused pull request to `biblemesh/moodle-mod_adaptivereview:bm-main`.
+
+The functional, migration, documentation, and lifecycle gates have been
+exercised locally. The remaining release gate is the repository's inherited
+Moodle CodeSniffer baseline. See [the release audit](mvp-release-audit.md) for
+the exact results; this step should not be marked complete until that gate and
+the pull request's CI matrix pass.
