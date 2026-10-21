@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
  * Global card and set repository management.
@@ -53,7 +61,7 @@ $PAGE->set_url('/mod/adaptivereview/repository.php', $pageparams);
 $PAGE->set_title(get_string('repositorytitle', 'mod_adaptivereview'));
 $PAGE->set_heading(get_string('repositorytitle', 'mod_adaptivereview'));
 
-$returnurl = static function(int $selectedsetid = 0, array $extra = []) use ($cmid): moodle_url {
+$returnurl = static function (int $selectedsetid = 0, array $extra = []) use ($cmid): moodle_url {
     $params = $extra;
     if ($cmid > 0) {
         $params['cmid'] = $cmid;
@@ -176,7 +184,7 @@ foreach ($sets as $set) {
     ];
 }
 
-$resolvedemocontent = static function(string $text): string {
+$resolvedemocontent = static function (string $text): string {
     if (preg_match('/^##(demo_[a-z0-9]+)##$/', $text, $matches)) {
         return get_string($matches[1], 'mod_adaptivereview');
     }
@@ -284,7 +292,9 @@ $templatedata = [
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('repositorytitle', 'mod_adaptivereview'));
-echo $OUTPUT->notification(get_string('repositorysharingnotice', 'mod_adaptivereview'),
-    \core\output\notification::NOTIFY_INFO);
+echo $OUTPUT->notification(
+    get_string('repositorysharingnotice', 'mod_adaptivereview'),
+    \core\output\notification::NOTIFY_INFO
+);
 echo $OUTPUT->render_from_template('mod_adaptivereview/repository', $templatedata);
 echo $OUTPUT->footer();

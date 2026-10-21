@@ -14,6 +14,7 @@ Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokument
 
 ### Changed
 - Activity-level privacy deletion now preserves global mastery while system-level erasure removes it and anonymizes repository authorship.
+- Cleared the Moodle Code Checker error baseline through mechanical formatting, Moodle-style naming, and API documentation.
 - User-data backups include mastery only for students who participated in the backed-up activity.
 - Restores preserve archived card state and correctly remap mastery, session, and attempt relationships into an isolated restored set.
 - Tutorial-card HTML now satisfies the review service contract and opens correctly in a new activity.

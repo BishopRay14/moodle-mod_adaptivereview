@@ -15,6 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * External service definitions for Adaptive Review.
+ *
  * @package   mod_adaptivereview
  * @copyright 2026 Peter Pleimfeldner
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -32,21 +34,34 @@ use mod_adaptivereview\local\review_manager;
 use mod_adaptivereview\local\review_queue_policy;
 use mod_adaptivereview\local\student_summary;
 
+/**
+ * Exposes the student review service endpoints.
+ */
 class external extends external_api {
-
+    /**
+     * Describe parameters for retrieving dashboard counts.
+     *
+     * @return external_function_parameters
+     */
     public static function get_box_counts_parameters() {
         return new external_function_parameters([
             'instanceid' => new external_value(PARAM_INT, 'The adaptivereview instance id'),
         ]);
     }
 
+    /**
+     * Retrieve dashboard card counts for a student.
+     *
+     * @param int $instanceid Activity instance ID.
+     * @return array Dashboard counts.
+     */
     public static function get_box_counts($instanceid) {
         global $USER;
-        
+
         $params = self::validate_parameters(self::get_box_counts_parameters(), [
             'instanceid' => $instanceid,
         ]);
-        
+
         $cm = get_coursemodule_from_instance('adaptivereview', $params['instanceid']);
         if (!$cm) {
             throw new \moodle_exception('invalidcoursemodule');
@@ -65,6 +80,11 @@ class external extends external_api {
         ];
     }
 
+    /**
+     * Describe the dashboard-count response.
+     *
+     * @return external_multiple_structure
+     */
     public static function get_box_counts_returns() {
         return new external_multiple_structure(
             new external_single_structure([
@@ -74,12 +94,23 @@ class external extends external_api {
         );
     }
 
+    /**
+     * Describe parameters for retrieving the student summary.
+     *
+     * @return external_function_parameters
+     */
     public static function get_student_summary_parameters() {
         return new external_function_parameters([
             'instanceid' => new external_value(PARAM_INT, 'The Adaptive Review instance ID'),
         ]);
     }
 
+    /**
+     * Retrieve the authoritative student summary.
+     *
+     * @param int $instanceid Activity instance ID.
+     * @return array Student summary values.
+     */
     public static function get_student_summary($instanceid) {
         global $USER;
 
@@ -96,6 +127,11 @@ class external extends external_api {
         return (array) $summary;
     }
 
+    /**
+     * Describe the student-summary response.
+     *
+     * @return external_single_structure
+     */
     public static function get_student_summary_returns() {
         return new external_single_structure([
             'duecount' => new external_value(PARAM_INT, 'Cards currently due'),
@@ -110,6 +146,11 @@ class external extends external_api {
         ]);
     }
 
+    /**
+     * Describe parameters for retrieving cards by dashboard category.
+     *
+     * @return external_function_parameters
+     */
     public static function get_cards_by_box_parameters() {
         return new external_function_parameters([
             'instanceid' => new external_value(PARAM_INT, 'The adaptivereview instance id'),
@@ -117,14 +158,21 @@ class external extends external_api {
         ]);
     }
 
+    /**
+     * Retrieve cards for a dashboard category.
+     *
+     * @param int $instanceid Activity instance ID.
+     * @param int $boxnumber Dashboard category number.
+     * @return array Card records prepared for the client.
+     */
     public static function get_cards_by_box($instanceid, $boxnumber) {
         global $DB, $USER;
-        
+
         $params = self::validate_parameters(self::get_cards_by_box_parameters(), [
             'instanceid' => $instanceid,
-            'boxnumber' => $boxnumber
+            'boxnumber' => $boxnumber,
         ]);
-        
+
         $cm = get_coursemodule_from_instance('adaptivereview', $params['instanceid']);
         if (!$cm) {
             throw new \moodle_exception('invalidcoursemodule');
@@ -142,9 +190,13 @@ class external extends external_api {
         $instanceid = $params['instanceid'];
         $now = time();
 
-        $adaptivereview = $DB->get_record('adaptivereview', ['id' => $instanceid],
-            'itemorder, setid, masterygoal', MUST_EXIST);
-        $order_by = ($adaptivereview->itemorder == 1) ? "ORDER BY sc.sortorder ASC, c.id ASC" : "";
+        $adaptivereview = $DB->get_record(
+            'adaptivereview',
+            ['id' => $instanceid],
+            'itemorder, setid, masterygoal',
+            MUST_EXIST
+        );
+        $orderby = ($adaptivereview->itemorder == 1) ? "ORDER BY sc.sortorder ASC, c.id ASC" : "";
 
         $select = "SELECT c.*,
                         COALESCE(p.masteryscore, 0) AS masteryscore,
@@ -163,14 +215,13 @@ class external extends external_api {
                     AND p.userid = :userid
                     AND p.nextreviewdate > 0
                     AND p.nextreviewdate <= :now
-                    $order_by";
+                    $orderby";
 
             $cards = $DB->get_records_sql($sql, [
                 'userid' => $userid,
                 'setid' => $adaptivereview->setid,
                 'now' => $now,
             ]);
-
         } else if ($box == 1) {
             $sql = "$select
                     FROM {adaptivereview_cards} c
@@ -180,7 +231,7 @@ class external extends external_api {
                     WHERE sc.setid = :setid
                     AND c.archived = 0
                     AND p.id IS NULL
-                    $order_by";
+                    $orderby";
 
             $cards = $DB->get_records_sql($sql, [
                 'userid' => $userid,
@@ -190,7 +241,6 @@ class external extends external_api {
             if (review_queue_policy::due_count($instanceid, $userid, $now) > 0) {
                 $cards = [];
             }
-
         } else if ($box == 2) {
             $sql = "$select
                     FROM {adaptivereview_cards} c
@@ -202,14 +252,13 @@ class external extends external_api {
                     AND p.userid = :userid
                     AND p.lastreviewdate > 0
                     AND p.nextreviewdate > :now
-                    $order_by";
+                    $orderby";
 
             $cards = $DB->get_records_sql($sql, [
                 'userid' => $userid,
                 'setid' => $adaptivereview->setid,
                 'now' => $now,
             ]);
-
         } else {
             $sql = "$select
                     FROM {adaptivereview_cards} c
@@ -218,7 +267,7 @@ class external extends external_api {
                         ON c.id = p.cardid AND p.userid = :userid
                     WHERE sc.setid = :setid
                     AND c.archived = 0
-                    $order_by";
+                    $orderby";
 
             $cards = $DB->get_records_sql($sql, [
                 'userid' => $userid,
@@ -232,7 +281,7 @@ class external extends external_api {
                 review_manager::MAX_MASTERY,
                 max(0.0, (float) $card->masteryscore)
             );
-            $resolve = function($text) {
+            $resolve = function ($text) {
                 if (preg_match('/^##(demo_[a-z0-9]+)##$/', $text, $m)) {
                     return get_string($m[1], 'mod_adaptivereview');
                 }
@@ -245,8 +294,10 @@ class external extends external_api {
                 'hint' => $resolve($card->hint ? $card->hint : ''),
                 'category' => $card->category ? $card->category : '',
                 'masteryscore' => round($masteryscore, 1),
-                'progresspercent' => round(min(100.0,
-                    ($masteryscore / max(0.1, (float) $adaptivereview->masterygoal)) * 100), 1),
+                'progresspercent' => round(min(
+                    100.0,
+                    ($masteryscore / max(0.1, (float) $adaptivereview->masterygoal)) * 100
+                ), 1),
                 'atgoal' => $masteryscore >= (float) $adaptivereview->masterygoal,
                 'requiredintervaldays' => (int)$card->requiredintervaldays,
                 'nextreviewdate' => (int)$card->nextreviewdate,
@@ -261,6 +312,11 @@ class external extends external_api {
         return array_values($result);
     }
 
+    /**
+     * Describe the card-list response.
+     *
+     * @return external_multiple_structure
+     */
     public static function get_cards_by_box_returns() {
         return new external_multiple_structure(
             new external_single_structure([
@@ -279,6 +335,11 @@ class external extends external_api {
         );
     }
 
+    /**
+     * Describe parameters for starting a review session.
+     *
+     * @return external_function_parameters
+     */
     public static function start_review_session_parameters() {
         return new external_function_parameters([
             'instanceid' => new external_value(PARAM_INT, 'The Adaptive Review instance ID'),
@@ -286,6 +347,13 @@ class external extends external_api {
         ]);
     }
 
+    /**
+     * Start a server-owned review session.
+     *
+     * @param int $instanceid Activity instance ID.
+     * @param string $mode Review mode.
+     * @return array Opaque session key.
+     */
     public static function start_review_session($instanceid, $mode) {
         global $USER;
 
@@ -304,18 +372,34 @@ class external extends external_api {
         return ['sessionkey' => $session->sessionkey];
     }
 
+    /**
+     * Describe the start-session response.
+     *
+     * @return external_single_structure
+     */
     public static function start_review_session_returns() {
         return new external_single_structure([
             'sessionkey' => new external_value(PARAM_ALPHANUM, 'Opaque review session key'),
         ]);
     }
 
+    /**
+     * Describe parameters for completing a review session.
+     *
+     * @return external_function_parameters
+     */
     public static function complete_review_session_parameters() {
         return new external_function_parameters([
             'sessionkey' => new external_value(PARAM_ALPHANUM, 'Opaque review session key'),
         ]);
     }
 
+    /**
+     * Complete a review session owned by the current user.
+     *
+     * @param string $sessionkey Opaque review session key.
+     * @return array Success response.
+     */
     public static function complete_review_session($sessionkey) {
         global $USER;
 
@@ -327,12 +411,22 @@ class external extends external_api {
         return ['success' => true];
     }
 
+    /**
+     * Describe the complete-session response.
+     *
+     * @return external_single_structure
+     */
     public static function complete_review_session_returns() {
         return new external_single_structure([
             'success' => new external_value(PARAM_BOOL, 'Success indicator'),
         ]);
     }
 
+    /**
+     * Describe parameters for submitting an answer.
+     *
+     * @return external_function_parameters
+     */
     public static function submit_answer_parameters() {
         return new external_function_parameters([
             'cardid' => new external_value(PARAM_INT, 'The card ID'),
@@ -341,6 +435,14 @@ class external extends external_api {
         ]);
     }
 
+    /**
+     * Record a student's answer in the active review session.
+     *
+     * @param int $cardid Global card ID.
+     * @param string $response Learner response.
+     * @param string $sessionkey Opaque review session key.
+     * @return array Attempt and mastery result.
+     */
     public static function submit_answer($cardid, $response, $sessionkey) {
         global $DB, $USER;
 
@@ -353,17 +455,19 @@ class external extends external_api {
         $session = review_manager::get_active_session($params['sessionkey'], $USER->id);
         $adaptivereview = $DB->get_record('adaptivereview', ['id' => $session->adaptivereviewid], '*', MUST_EXIST);
         $card = $DB->get_record('adaptivereview_cards', ['id' => $params['cardid'], 'archived' => 0], '*', MUST_EXIST);
-        if (!$DB->record_exists('adaptivereview_set_cards', [
+        if (
+            !$DB->record_exists('adaptivereview_set_cards', [
                 'setid' => $adaptivereview->setid,
                 'cardid' => $card->id,
-            ])) {
+            ])
+        ) {
             throw new \moodle_exception('invalidrecord');
         }
         $course = $DB->get_record('course', ['id' => $adaptivereview->course], '*', MUST_EXIST);
 
-        $cm_raw = get_coursemodule_from_instance('adaptivereview', $adaptivereview->id, $course->id, false, MUST_EXIST);
+        $cmraw = get_coursemodule_from_instance('adaptivereview', $adaptivereview->id, $course->id, false, MUST_EXIST);
         $modinfo = get_fast_modinfo($course);
-        $cm = $modinfo->get_cm($cm_raw->id);
+        $cm = $modinfo->get_cm($cmraw->id);
         $context = \context_module::instance($cm->id);
 
         self::validate_context($context);
@@ -387,6 +491,11 @@ class external extends external_api {
         ];
     }
 
+    /**
+     * Describe the answer-submission response.
+     *
+     * @return external_single_structure
+     */
     public static function submit_answer_returns() {
         return new external_single_structure([
             'success' => new external_value(PARAM_BOOL, 'Success indicator'),
@@ -399,12 +508,23 @@ class external extends external_api {
         ]);
     }
 
+    /**
+     * Describe parameters for resetting progress.
+     *
+     * @return external_function_parameters
+     */
     public static function reset_progress_parameters() {
         return new external_function_parameters([
             'instanceid' => new external_value(PARAM_INT, 'The adaptivereview instance id'),
         ]);
     }
 
+    /**
+     * Reset the current user's mastery for cards in an activity set.
+     *
+     * @param int $instanceid Activity instance ID.
+     * @return array Success response and reset count.
+     */
     public static function reset_progress($instanceid) {
         global $DB, $USER;
 
@@ -414,21 +534,25 @@ class external extends external_api {
 
         $adaptivereview = $DB->get_record('adaptivereview', ['id' => $params['instanceid']], '*', MUST_EXIST);
         $course = $DB->get_record('course', ['id' => $adaptivereview->course], '*', MUST_EXIST);
-        
-        $cm_raw = get_coursemodule_from_instance('adaptivereview', $params['instanceid'], $course->id, false, MUST_EXIST);
+
+        $cmraw = get_coursemodule_from_instance('adaptivereview', $params['instanceid'], $course->id, false, MUST_EXIST);
         $modinfo = get_fast_modinfo($course);
-        $cm = $modinfo->get_cm($cm_raw->id);
+        $cm = $modinfo->get_cm($cmraw->id);
         $context = \context_module::instance($cm->id);
         self::validate_context($context);
         require_capability('mod/adaptivereview:view', $context);
 
-        $cardids = $DB->get_fieldset_select('adaptivereview_set_cards', 'cardid', 'setid = ?',
-            [$adaptivereview->setid]);
+        $cardids = $DB->get_fieldset_select(
+            'adaptivereview_set_cards',
+            'cardid',
+            'setid = ?',
+            [$adaptivereview->setid]
+        );
 
         $resetcount = 0;
 
         if (!empty($cardids)) {
-            list($insql, $inparams) = $DB->get_in_or_equal($cardids, SQL_PARAMS_QM);
+            [$insql, $inparams] = $DB->get_in_or_equal($cardids, SQL_PARAMS_QM);
 
             $select = "userid = ? AND cardid $insql";
             $deleteparams = array_merge([$USER->id], $inparams);
@@ -448,6 +572,11 @@ class external extends external_api {
         ];
     }
 
+    /**
+     * Describe the reset-progress response.
+     *
+     * @return external_single_structure
+     */
     public static function reset_progress_returns() {
         return new external_single_structure([
             'success' => new external_value(PARAM_BOOL, 'Success indicator'),

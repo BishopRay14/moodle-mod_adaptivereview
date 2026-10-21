@@ -15,6 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Activity backup structure for Adaptive Review.
+ *
  * @package   mod_adaptivereview
  * @copyright 2026 Peter Pleimfeldner
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -22,36 +24,44 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+/**
+ * Defines the data tree included in an Adaptive Review activity backup.
+ */
 class backup_adaptivereview_activity_structure_step extends backup_activity_structure_step {
+    /**
+     * Build and prepare the activity backup structure.
+     *
+     * @return backup_nested_element Prepared activity structure.
+     */
     protected function define_structure() {
 
         // Define each element separated.
         $adaptivereview = new backup_nested_element('adaptivereview', ['id'], [
             'course', 'name', 'intro', 'introformat', 'masterygoal', 'itemorder',
-            'completion_min_items', 'completion_min_mastered', 'completion_all_mastered', 'timecreated', 'timemodified'
+            'completion_min_items', 'completion_min_mastered', 'completion_all_mastered', 'timecreated', 'timemodified',
         ]);
 
         $items = new backup_nested_element('items');
         $item = new backup_nested_element('item', ['id'], [
-            'question', 'answer', 'hint', 'category', 'archived', 'sortorder'
+            'question', 'answer', 'hint', 'category', 'archived', 'sortorder',
         ]);
 
         $masteries = new backup_nested_element('masteries');
         $mastery = new backup_nested_element('mastery', ['id'], [
             'userid', 'box_number', 'status', 'count_correct', 'count_wrong', 'last_reviewed',
-            'masteryscore', 'requiredintervaldays', 'nextreviewdate', 'lastreviewdate'
+            'masteryscore', 'requiredintervaldays', 'nextreviewdate', 'lastreviewdate',
         ]);
 
         $sessions = new backup_nested_element('sessions');
         $session = new backup_nested_element('session', ['id'], [
-            'userid', 'mode', 'timecreated', 'timecompleted'
+            'userid', 'mode', 'timecreated', 'timecompleted',
         ]);
         $attempts = new backup_nested_element('attempts');
         $attempt = new backup_nested_element('attempt', ['id'], [
             'cardid', 'attemptnumber', 'response', 'wasdue', 'isremediation',
             'masteryeligible', 'masterybefore', 'masterygain', 'masteryafter',
             'intervalbefore', 'intervalafter', 'previousreviewdate', 'previousduedate',
-            'nextreviewdate', 'algorithmversion', 'timecreated'
+            'nextreviewdate', 'algorithmversion', 'timecreated',
         ]);
 
         // Build the tree.

@@ -1,5 +1,5 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
+// This file is part of Moodle - https://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -12,13 +12,18 @@
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
+ * Student dashboard page for mod_adaptivereview.
+ *
+ * Uses the Moodle Output API and the bundled JavaScript application.
+ *
  * @package   mod_adaptivereview
  * @copyright 2026 Peter Pleimfeldner
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
 require_once('../../config.php');
 require_once(__DIR__ . '/lib.php');
 
@@ -41,11 +46,11 @@ $PAGE->set_context($context);
 
 // Export strings for Vue frontend
 $vuestrings = [
-    'dashboardtitle', 'dashboardsbtitle', 'howitworks', 'cards', 'systemtitle', 
+    'dashboardtitle', 'dashboardsbtitle', 'howitworks', 'cards', 'systemtitle',
     'systemintro', 'known_btn', 'known_desc', 'notyet_btn', 'notyet_desc',
     'systemtip', 'gotit', 'showhint', 'hint',
-    'taptoflip', 'action_back', 'action_stay', 'action_next', 'backtodashboard', 
-    'cardxofy_x', 'cardxofy_y', 'loadingcards', 'sessiondone', 'sessiondonedesc', 
+    'taptoflip', 'action_back', 'action_stay', 'action_next', 'backtodashboard',
+    'cardxofy_x', 'cardxofy_y', 'loadingcards', 'sessiondone', 'sessiondonedesc',
     'completed', 'error_loading_cards', 'error_saving_answer', 'box0', 'box1', 'box2', 'box3', 'box4', 'box5', 'queue_due', 'queue_new', 'queue_recent', 'queue_all',
     'newcardaccess', 'newcardaccessdue',
     'reset_progress', 'reset_progress_confirm_title', 'reset_progress_confirm_msg',
@@ -93,7 +98,7 @@ $appdata = [
 // Mount point for Vue
 echo \html_writer::tag('div', '', [
     'id' => 'v-app-mod-adaptivereview',
-    'data-config' => json_encode($appdata)
+    'data-config' => json_encode($appdata),
 ]);
 
 // Include Vue build scripts manually with cache-busting

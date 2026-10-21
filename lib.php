@@ -15,6 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Core callbacks for the Adaptive Review activity module.
+ *
  * @package   mod_adaptivereview
  * @copyright 2026 Peter Pleimfeldner
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -59,7 +61,7 @@ function adaptivereview_add_instance($adaptivereview) {
     // Insert tutorial demo cards using language-neutral marker keys.
     // The markers (e.g. ##demo_q1##) are resolved to the user's language
     // at display time in external.php, so the correct language is always shown.
-    $demo_cards = [
+    $democards = [
         ['adaptivereviewid' => $id, 'category' => 'demo', 'question' => '##demo_q1##', 'answer' => '##demo_a1##', 'hint' => '##demo_h1##'],
         ['adaptivereviewid' => $id, 'category' => 'demo', 'question' => '##demo_q2##', 'answer' => '##demo_a2##', 'hint' => '##demo_h2##'],
         ['adaptivereviewid' => $id, 'category' => 'demo', 'question' => '##demo_q3##', 'answer' => '##demo_a3##', 'hint' => '##demo_h3##'],
@@ -67,7 +69,7 @@ function adaptivereview_add_instance($adaptivereview) {
         ['adaptivereviewid' => $id, 'category' => 'demo', 'question' => '##demo_q5##', 'answer' => '##demo_a5##', 'hint' => '##demo_h5##'],
     ];
 
-    foreach ($createset ? $demo_cards : [] as $sortorder => $card) {
+    foreach ($createset ? $democards : [] as $sortorder => $card) {
         unset($card['adaptivereviewid']);
         $card += [
             'archived' => 0,
@@ -119,7 +121,7 @@ function adaptivereview_delete_instance($id) {
     if (!$adaptivereview = $DB->get_record('adaptivereview', ['id' => $id])) {
         return false;
     }
-    
+
     $sessionids = $DB->get_fieldset_select('adaptivereview_sessions', 'id', 'adaptivereviewid = ?', [$id]);
     if ($sessionids) {
         [$insql, $params] = $DB->get_in_or_equal($sessionids);
@@ -144,13 +146,19 @@ function adaptivereview_delete_instance($id) {
  * @return mixed
  */
 function adaptivereview_supports($feature) {
-    switch($feature) {
-        case FEATURE_MOD_INTRO: return true;
-        case FEATURE_SHOW_DESCRIPTION: return true;
-        case FEATURE_COMPLETION_TRACKS_VIEWS: return true;
-        case FEATURE_COMPLETION_HAS_RULES: return true;
-        case FEATURE_BACKUP_MOODLE2: return true;
-        default: return null;
+    switch ($feature) {
+        case FEATURE_MOD_INTRO:
+            return true;
+        case FEATURE_SHOW_DESCRIPTION:
+            return true;
+        case FEATURE_COMPLETION_TRACKS_VIEWS:
+            return true;
+        case FEATURE_COMPLETION_HAS_RULES:
+            return true;
+        case FEATURE_BACKUP_MOODLE2:
+            return true;
+        default:
+            return null;
     }
 }
 
@@ -165,8 +173,11 @@ function adaptivereview_supports($feature) {
 function adaptivereview_get_coursemodule_info($coursemodule) {
     global $DB;
 
-    $adaptivereview = $DB->get_record('adaptivereview', ['id' => $coursemodule->instance],
-        'id, name, completion_min_items, completion_min_mastered, completion_all_mastered');
+    $adaptivereview = $DB->get_record(
+        'adaptivereview',
+        ['id' => $coursemodule->instance],
+        'id, name, completion_min_items, completion_min_mastered, completion_all_mastered'
+    );
     if (!$adaptivereview) {
         return false;
     }

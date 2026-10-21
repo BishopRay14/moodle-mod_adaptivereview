@@ -15,12 +15,20 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Database upgrades for Adaptive Review.
+ *
  * @package   mod_adaptivereview
  * @copyright 2026 Peter Pleimfeldner
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 defined('MOODLE_INTERNAL') || die();
 
+/**
+ * Upgrade the Adaptive Review database schema.
+ *
+ * @param int $oldversion Previously installed plugin version.
+ * @return bool
+ */
 function xmldb_adaptivereview_upgrade($oldversion) {
     global $DB;
     $dbman = $DB->get_manager();
@@ -87,13 +95,13 @@ function xmldb_adaptivereview_upgrade($oldversion) {
     if ($oldversion < 2026070701) {
         $table = new xmldb_table('adaptivereview_cards');
 
-        if ($dbman->table_exists($table)){
+        if ($dbman->table_exists($table)) {
             $dbman->rename_table($table, 'adaptivereview_items');
         }
 
         $table = new xmldb_table('adaptivereview_progress');
 
-        if ($dbman->table_exists($table)){
+        if ($dbman->table_exists($table)) {
             $dbman->rename_table($table, 'adaptivereview_mastery');
         }
 
@@ -203,14 +211,22 @@ function xmldb_adaptivereview_upgrade($oldversion) {
         if ($dbman->index_exists($masterytable, $index)) {
             $dbman->drop_index($masterytable, $index);
         }
-        $index = new xmldb_index('sessionid_itemid_attempt', XMLDB_INDEX_UNIQUE,
-            ['sessionid', 'itemid', 'attemptnumber']);
+        $index = new xmldb_index(
+            'sessionid_itemid_attempt',
+            XMLDB_INDEX_UNIQUE,
+            ['sessionid', 'itemid', 'attemptnumber']
+        );
         if ($dbman->index_exists($attempttable, $index)) {
             $dbman->drop_index($attempttable, $index);
         }
 
-        $key = new xmldb_key('adaptivereviewid', XMLDB_KEY_FOREIGN, ['adaptivereviewid'],
-            'adaptivereview', ['id']);
+        $key = new xmldb_key(
+            'adaptivereviewid',
+            XMLDB_KEY_FOREIGN,
+            ['adaptivereviewid'],
+            'adaptivereview',
+            ['id']
+        );
         $dbman->drop_key($cardtable, $key);
 
         $dbman->rename_table($cardtable, 'adaptivereview_cards');
@@ -286,8 +302,12 @@ function xmldb_adaptivereview_upgrade($oldversion) {
             ]);
 
             $sortorder = 0;
-            $cards = $DB->get_records('adaptivereview_cards',
-                ['adaptivereviewid' => $activity->id], 'id ASC', 'id');
+            $cards = $DB->get_records(
+                'adaptivereview_cards',
+                ['adaptivereviewid' => $activity->id],
+                'id ASC',
+                'id'
+            );
             foreach ($cards as $card) {
                 $DB->insert_record('adaptivereview_set_cards', (object) [
                     'setid' => $setid,
@@ -300,13 +320,18 @@ function xmldb_adaptivereview_upgrade($oldversion) {
             $DB->set_field('adaptivereview', 'setid', $setid, ['id' => $activity->id]);
         }
 
-        if ($DB->count_records('adaptivereview_cards') !== $legacycardcount
+        if (
+            $DB->count_records('adaptivereview_cards') !== $legacycardcount
                 || $DB->count_records('adaptivereview_set_cards') !== $legacycardcount
                 || $DB->count_records('adaptivereview_mastery') !== $legacymasterycount
                 || $DB->count_records('adaptivereview_attempts') !== $legacyattemptcount
-                || $DB->count_records_select('adaptivereview', 'setid = 0') !== 0) {
-            throw new upgrade_exception('mod_adaptivereview', 2026101400,
-                'Global repository migration validation failed; the legacy relationships could not be preserved.');
+                || $DB->count_records_select('adaptivereview', 'setid = 0') !== 0
+        ) {
+            throw new upgrade_exception(
+                'mod_adaptivereview',
+                2026101400,
+                'Global repository migration validation failed; the legacy relationships could not be preserved.'
+            );
         }
 
         $field = new xmldb_field('adaptivereviewid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
@@ -317,20 +342,33 @@ function xmldb_adaptivereview_upgrade($oldversion) {
         $field = new xmldb_field('itemid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'sessionid');
         $dbman->rename_field($attempttable, $field, 'cardid');
 
-        $dbman->add_key($masterytable,
-            new xmldb_key('cardid', XMLDB_KEY_FOREIGN, ['cardid'], 'adaptivereview_cards', ['id']));
-        $dbman->add_index($masterytable,
-            new xmldb_index('userid_cardid', XMLDB_INDEX_UNIQUE, ['userid', 'cardid']));
-        $dbman->add_key($attempttable,
-            new xmldb_key('cardid', XMLDB_KEY_FOREIGN, ['cardid'], 'adaptivereview_cards', ['id']));
-        $dbman->add_index($attempttable,
-            new xmldb_index('sessionid_cardid_attempt', XMLDB_INDEX_UNIQUE,
-                ['sessionid', 'cardid', 'attemptnumber']));
+        $dbman->add_key(
+            $masterytable,
+            new xmldb_key('cardid', XMLDB_KEY_FOREIGN, ['cardid'], 'adaptivereview_cards', ['id'])
+        );
+        $dbman->add_index(
+            $masterytable,
+            new xmldb_index('userid_cardid', XMLDB_INDEX_UNIQUE, ['userid', 'cardid'])
+        );
+        $dbman->add_key(
+            $attempttable,
+            new xmldb_key('cardid', XMLDB_KEY_FOREIGN, ['cardid'], 'adaptivereview_cards', ['id'])
+        );
+        $dbman->add_index(
+            $attempttable,
+            new xmldb_index(
+                'sessionid_cardid_attempt',
+                XMLDB_INDEX_UNIQUE,
+                ['sessionid', 'cardid', 'attemptnumber']
+            )
+        );
 
         $dbman->add_index($cardtable, new xmldb_index('archived', XMLDB_INDEX_NOTUNIQUE, ['archived']));
         $dbman->add_index($cardtable, new xmldb_index('category', XMLDB_INDEX_NOTUNIQUE, ['category']));
-        $dbman->add_key($activitytable,
-            new xmldb_key('setid', XMLDB_KEY_FOREIGN, ['setid'], 'adaptivereview_sets', ['id']));
+        $dbman->add_key(
+            $activitytable,
+            new xmldb_key('setid', XMLDB_KEY_FOREIGN, ['setid'], 'adaptivereview_sets', ['id'])
+        );
         upgrade_mod_savepoint(true, 2026101400, 'adaptivereview');
     }
 

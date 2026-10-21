@@ -15,6 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Activity restore task for Adaptive Review.
+ *
  * @package   mod_adaptivereview
  * @copyright 2026 Peter Pleimfeldner
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -25,26 +27,47 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->dirroot . '/mod/adaptivereview/backup/moodle2/restore_adaptivereview_stepslib.php');
 
+/**
+ * Configures activity restore steps, decoding, and log rules.
+ */
 class restore_adaptivereview_activity_task extends restore_activity_task {
-
+    /**
+     * Define activity-specific restore settings.
+     */
     protected function define_my_settings() {
         // No particular settings for this activity.
     }
 
+    /**
+     * Add the activity structure restore step.
+     */
     protected function define_my_steps() {
         // Add the adaptivereview structure step.
         $this->add_step(new restore_adaptivereview_activity_structure_step('adaptivereview_structure', 'adaptivereview.xml'));
     }
 
-    static public function define_decode_contents() {
+    /**
+     * Define content fields whose links Moodle should decode.
+     *
+     * @return array Restore content definitions.
+     */
+    public static function define_decode_contents() {
         $contents = [];
         $contents[] = new restore_decode_content('adaptivereview', ['intro'], 'adaptivereview');
-        $contents[] = new restore_decode_content('adaptivereview_cards', ['question', 'answer', 'hint'],
-            'adaptivereview_cards');
+        $contents[] = new restore_decode_content(
+            'adaptivereview_cards',
+            ['question', 'answer', 'hint'],
+            'adaptivereview_cards'
+        );
         return $contents;
     }
 
-    static public function define_decode_rules() {
+    /**
+     * Define link decoding rules.
+     *
+     * @return array Restore decoding rules.
+     */
+    public static function define_decode_rules() {
         $rules = [];
         // New rules for Adaptive Review backups
         $rules[] = new restore_decode_rule('ADAPTIVEREVIEWINDEX', '/mod/adaptivereview/index.php?id=$1', 'course');
@@ -55,7 +78,12 @@ class restore_adaptivereview_activity_task extends restore_activity_task {
         return $rules;
     }
 
-    static public function define_restore_log_rules() {
+    /**
+     * Define activity log restoration rules.
+     *
+     * @return array Restore log rules.
+     */
+    public static function define_restore_log_rules() {
         $rules = [];
         $rules[] = new restore_log_rule('adaptivereview', 'add', 'view.php?id={course_module}', '{adaptivereview}');
         $rules[] = new restore_log_rule('adaptivereview', 'update', 'view.php?id={course_module}', '{adaptivereview}');
@@ -63,7 +91,12 @@ class restore_adaptivereview_activity_task extends restore_activity_task {
         return $rules;
     }
 
-    static public function define_restore_log_rules_for_course() {
+    /**
+     * Define course-level log restoration rules.
+     *
+     * @return array Restore log rules.
+     */
+    public static function define_restore_log_rules_for_course() {
         $rules = [];
         $rules[] = new restore_log_rule('adaptivereview', 'view all', 'index.php?id={course}', null);
         return $rules;

@@ -15,6 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Activity restore structure for Adaptive Review.
+ *
  * @package   mod_adaptivereview
  * @copyright 2026 Peter Pleimfeldner
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -22,15 +24,22 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+/**
+ * Restores an activity into an isolated repository set.
+ */
 class restore_adaptivereview_activity_structure_step extends restore_activity_structure_step {
-
+    /**
+     * Define restore paths for activity and optional user data.
+     *
+     * @return array Restore path elements.
+     */
     protected function define_structure() {
         $paths = [];
         $userinfo = $this->get_setting_value('userinfo');
 
         $paths[] = new restore_path_element('adaptivereview', '/activity/adaptivereview');
         $paths[] = new restore_path_element('adaptivereview_item', '/activity/adaptivereview/items/item');
-        
+
         if ($userinfo) {
             $paths[] = new restore_path_element('adaptivereview_mastery', '/activity/adaptivereview/items/item/masteries/mastery');
             $paths[] = new restore_path_element('adaptivereview_session', '/activity/adaptivereview/sessions/session');
@@ -43,6 +52,11 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
         return $this->prepare_activity_structure($paths);
     }
 
+    /**
+     * Restore the activity record and its isolated set.
+     *
+     * @param array $data Decoded backup data.
+     */
     protected function process_adaptivereview($data) {
         global $DB;
 
@@ -74,6 +88,11 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
         $this->apply_activity_instance($newitemid);
     }
 
+    /**
+     * Restore a repository card and set membership.
+     *
+     * @param array $data Decoded backup data.
+     */
     protected function process_adaptivereview_item($data) {
         global $DB;
 
@@ -103,6 +122,11 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
         $this->set_mapping('adaptivereview_cards', $oldid, $newcardid);
     }
 
+    /**
+     * Restore a student's lifelong mastery record.
+     *
+     * @param array $data Decoded backup data.
+     */
     protected function process_adaptivereview_mastery($data) {
         global $DB;
 
@@ -119,11 +143,16 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
         $data->last_reviewed = $this->apply_date_offset($data->last_reviewed);
         $data->nextreviewdate = $this->apply_date_offset($data->nextreviewdate);
         $data->lastreviewdate = $this->apply_date_offset($data->lastreviewdate);
-        
+
         $newmasteryid = $DB->insert_record('adaptivereview_mastery', $data);
         $this->set_mapping('adaptivereview_mastery', $oldid, $newmasteryid);
     }
 
+    /**
+     * Restore a review session.
+     *
+     * @param array $data Decoded backup data.
+     */
     protected function process_adaptivereview_session($data) {
         global $DB;
 
@@ -144,6 +173,11 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
         $this->set_mapping('adaptivereview_sessions', $oldid, $newsessionid);
     }
 
+    /**
+     * Restore an append-only attempt record.
+     *
+     * @param array $data Decoded backup data.
+     */
     protected function process_adaptivereview_attempt($data) {
         global $DB;
 
@@ -164,6 +198,9 @@ class restore_adaptivereview_activity_structure_step extends restore_activity_st
         $this->set_mapping('adaptivereview_attempts', $oldid, $newattemptid);
     }
 
+    /**
+     * Restore files after database records exist.
+     */
     protected function after_execute() {
         // Add adaptivereview related files, no need to match by itemname (just internally handled context).
         $this->add_related_files('mod_adaptivereview', 'intro', null);

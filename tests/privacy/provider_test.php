@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace mod_adaptivereview\privacy;
 
@@ -21,7 +29,6 @@ use mod_adaptivereview\local\review_manager;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class provider_test extends \core_privacy\tests\provider_testcase {
-
     /**
      * Create shared global mastery and activity-specific history.
      *
@@ -42,8 +49,13 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
             'name' => 'Second activity',
             'setid' => $first->setid,
         ]);
-        $cardids = $DB->get_fieldset_select('adaptivereview_set_cards', 'cardid',
-            'setid = ?', [$first->setid], 'sortorder ASC');
+        $cardids = $DB->get_fieldset_select(
+            'adaptivereview_set_cards',
+            'cardid',
+            'setid = ?',
+            [$first->setid],
+            'sortorder ASC'
+        );
         $cardid = (int) reset($cardids);
         $card = $DB->get_record('adaptivereview_cards', ['id' => $cardid], '*', MUST_EXIST);
         $DB->set_field('adaptivereview_cards', 'createdby', $student->id, ['id' => $cardid]);
@@ -51,11 +63,19 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
         $DB->set_field('adaptivereview_sets', 'createdby', $student->id, ['id' => $first->setid]);
         $DB->set_field('adaptivereview_sets', 'modifiedby', $student->id, ['id' => $first->setid]);
 
-        $session = review_manager::start_session((int) $first->id, (int) $student->id,
-            review_manager::MODE_NEW, 1000000);
+        $session = review_manager::start_session(
+            (int) $first->id,
+            (int) $student->id,
+            review_manager::MODE_NEW,
+            1000000
+        );
         review_manager::record_attempt($session, $card, review_manager::RESPONSE_KNOW, 1000010);
-        review_manager::start_session((int) $second->id, (int) $student->id,
-            review_manager::MODE_EARLY, 1000020);
+        review_manager::start_session(
+            (int) $second->id,
+            (int) $student->id,
+            review_manager::MODE_EARLY,
+            1000020
+        );
 
         $firstcm = get_coursemodule_from_instance('adaptivereview', $first->id, $course->id, false, MUST_EXIST);
         $secondcm = get_coursemodule_from_instance('adaptivereview', $second->id, $course->id, false, MUST_EXIST);

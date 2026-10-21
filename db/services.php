@@ -15,67 +15,69 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * External service definitions for Adaptive Review.
+ *
  * @package   mod_adaptivereview
  * @copyright 2026 Peter Pleimfeldner
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 defined('MOODLE_INTERNAL') || die();
 
-$functions = array(
-    'mod_adaptivereview_get_box_counts' => array(
+$functions = [
+    'mod_adaptivereview_get_box_counts' => [
         'classname' => 'mod_adaptivereview\external',
         'methodname' => 'get_box_counts',
         'classpath' => 'mod/adaptivereview/classes/external.php',
         'description' => 'Get aggregated card counts for the student dashboard queues',
         'type' => 'read',
         'ajax' => true,
-    ),
-    'mod_adaptivereview_get_student_summary' => array(
+    ],
+    'mod_adaptivereview_get_student_summary' => [
         'classname' => 'mod_adaptivereview\external',
         'methodname' => 'get_student_summary',
         'classpath' => 'mod/adaptivereview/classes/external.php',
         'description' => 'Get the authoritative student queue and set mastery summary',
         'type' => 'read',
         'ajax' => true,
-    ),
-    'mod_adaptivereview_get_cards_by_box' => array(
+    ],
+    'mod_adaptivereview_get_cards_by_box' => [
         'classname' => 'mod_adaptivereview\external',
         'methodname' => 'get_cards_by_box',
         'classpath' => 'mod/adaptivereview/classes/external.php',
         'description' => 'Get cards in a student dashboard category',
         'type' => 'read',
         'ajax' => true,
-    ),
-    'mod_adaptivereview_submit_answer' => array(
+    ],
+    'mod_adaptivereview_submit_answer' => [
         'classname' => 'mod_adaptivereview\external',
         'methodname' => 'submit_answer',
         'classpath' => 'mod/adaptivereview/classes/external.php',
         'description' => 'Record an Adaptive Review retrieval attempt',
         'type' => 'write',
         'ajax' => true,
-    ),
-    'mod_adaptivereview_start_review_session' => array(
+    ],
+    'mod_adaptivereview_start_review_session' => [
         'classname' => 'mod_adaptivereview\external',
         'methodname' => 'start_review_session',
         'classpath' => 'mod/adaptivereview/classes/external.php',
         'description' => 'Start an authoritative Adaptive Review session',
         'type' => 'write',
         'ajax' => true,
-    ),
-    'mod_adaptivereview_complete_review_session' => array(
+    ],
+    'mod_adaptivereview_complete_review_session' => [
         'classname' => 'mod_adaptivereview\external',
         'methodname' => 'complete_review_session',
         'classpath' => 'mod/adaptivereview/classes/external.php',
         'description' => 'Complete an authoritative Adaptive Review session',
         'type' => 'write',
         'ajax' => true,
-    ),
-    'mod_adaptivereview_reset_progress' => array(
+    ],
+    'mod_adaptivereview_reset_progress' => [
         'classname' => 'mod_adaptivereview\external',
         'methodname' => 'reset_progress',
         'classpath' => 'mod/adaptivereview/classes/external.php',
         'description' => 'Reset all card progress for the current user',
         'type' => 'write',
         'ajax' => true,
-    ),
-);
+    ],
+];

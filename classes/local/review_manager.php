@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace mod_adaptivereview\local;
 
@@ -18,7 +26,6 @@ defined('MOODLE_INTERNAL') || die();
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class review_manager {
-
     /** @var string Due-card session mode. */
     public const MODE_DUE = 'due';
 
@@ -243,10 +250,12 @@ class review_manager {
             throw new \invalid_parameter_exception('Invalid review response.');
         }
         $setid = $DB->get_field('adaptivereview', 'setid', ['id' => $session->adaptivereviewid], MUST_EXIST);
-        if (!$DB->record_exists('adaptivereview_set_cards', [
+        if (
+            !$DB->record_exists('adaptivereview_set_cards', [
                 'setid' => $setid,
                 'cardid' => $item->id,
-            ])) {
+            ])
+        ) {
             throw new \invalid_parameter_exception('The card does not belong to this review session.');
         }
 

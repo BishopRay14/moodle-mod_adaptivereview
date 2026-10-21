@@ -31,7 +31,6 @@ defined('MOODLE_INTERNAL') || die();
  * Library unit tests for mod_adaptivereview.
  */
 final class lib_test extends \advanced_testcase {
-
     public static function setUpBeforeClass(): void {
         global $CFG;
 
@@ -40,6 +39,7 @@ final class lib_test extends \advanced_testcase {
     }
 
     public function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest();
         $this->setAdminUser();
     }
@@ -47,7 +47,7 @@ final class lib_test extends \advanced_testcase {
     /**
      * Test adding, updating, and deleting an instance.
      */
-    public function test_instance_lifecycle() {
+    public function test_instance_lifecycle(): void {
         global $DB;
 
         $course = $this->getDataGenerator()->create_course();

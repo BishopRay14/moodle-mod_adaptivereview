@@ -29,7 +29,6 @@ defined('MOODLE_INTERNAL') || die();
  * Creates Adaptive Review activity instances for automated tests.
  */
 class mod_adaptivereview_generator extends testing_module_generator {
-
     /**
      * Create an Adaptive Review activity.
      *

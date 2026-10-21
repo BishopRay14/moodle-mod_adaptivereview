@@ -5,6 +5,14 @@
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace mod_adaptivereview;
 
@@ -18,7 +26,6 @@ use mod_adaptivereview\local\review_manager;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class backup_restore_test extends \advanced_testcase {
-
     /**
      * Restore creates an isolated set, preserves archives, and excludes
      * mastery belonging only to another activity that shares the card.
@@ -46,19 +53,32 @@ final class backup_restore_test extends \advanced_testcase {
             'name' => 'Other shared activity',
             'setid' => $source->setid,
         ]);
-        $cardids = array_values($DB->get_fieldset_select('adaptivereview_set_cards', 'cardid',
-            'setid = ?', [$source->setid], 'sortorder ASC'));
+        $cardids = array_values($DB->get_fieldset_select(
+            'adaptivereview_set_cards',
+            'cardid',
+            'setid = ?',
+            [$source->setid],
+            'sortorder ASC'
+        ));
         $reviewcard = $DB->get_record('adaptivereview_cards', ['id' => $cardids[0]], '*', MUST_EXIST);
         $archivedcardid = (int) $cardids[1];
         $DB->set_field('adaptivereview_cards', 'question', 'Backup identity card', ['id' => $reviewcard->id]);
         $reviewcard->question = 'Backup identity card';
         $DB->set_field('adaptivereview_cards', 'archived', 1, ['id' => $archivedcardid]);
 
-        $includedsession = review_manager::start_session((int) $source->id, (int) $includedstudent->id,
-            review_manager::MODE_NEW, 1000000);
+        $includedsession = review_manager::start_session(
+            (int) $source->id,
+            (int) $includedstudent->id,
+            review_manager::MODE_NEW,
+            1000000
+        );
         review_manager::record_attempt($includedsession, $reviewcard, review_manager::RESPONSE_KNOW, 1000010);
-        $othersession = review_manager::start_session((int) $otheractivity->id, (int) $otherstudent->id,
-            review_manager::MODE_NEW, 1000020);
+        $othersession = review_manager::start_session(
+            (int) $otheractivity->id,
+            (int) $otherstudent->id,
+            review_manager::MODE_NEW,
+            1000020
+        );
         review_manager::record_attempt($othersession, $reviewcard, review_manager::RESPONSE_KNOW, 1000030);
 
         $CFG->backup_file_logger_level = \backup::LOG_NONE;

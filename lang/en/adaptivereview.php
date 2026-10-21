@@ -15,102 +15,104 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * English language strings for Adaptive Review.
+ *
  * @package   mod_adaptivereview
  * @copyright 2026 Peter Pleimfeldner
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-$string['modulename'] = 'Adaptive Review';
-$string['modulename_help'] = 'Adaptive Review helps students build long-term mastery through spaced review sessions. Students review learning items repeatedly, with material they know well appearing less frequently and difficult material returning more often.';
-$string['modulenameplural'] = 'Adaptive Reviews';
-$string['pluginadministration'] = 'Adaptive Review administration';
-$string['pluginname'] = 'Adaptive Review';
+$string['activities'] = 'activities';
 $string['adaptivereview:addinstance'] = 'Add a new Adaptive Review';
 $string['adaptivereview:manageglobalrepository'] = 'Manage the global Adaptive Review repository';
 $string['adaptivereview:view'] = 'View Adaptive Review';
-
 $string['adaptivereviewname'] = 'Activity Name';
-$string['settings'] = 'Adaptive Review Settings';
-$string['completion_min_items'] = 'Minimum cards answered correctly';
-$string['completion_min_items_help'] = 'A card counts as correctly answered once it has received at least one correct response.';
-$string['completion_min_cards_desc'] = 'Student must answer at least this many cards correctly at least once:';
-$string['completion_min_cards_help'] = 'A card counts as "correctly answered" once it has been rated green at least once and is in Box 1 or higher. Cards that were only rated red or yellow do not count.';
-
-$string['completion_min_mastered'] = 'Mastered cards (Box 5)';
-$string['completion_min_mastered_desc'] = 'Minimum number of flashcards students must master (reach Box 5):';
-$string['completion_min_mastered_help'] = 'Specifies how many cards students must promote to the Expert deck (Box 5). Important: This value must not exceed the total number of cards in the activity – otherwise completion becomes unreachable.';
-
-$string['completion_all_mastered'] = 'All cards mastered';
-$string['completion_all_mastered_desc'] = 'Students must master ALL flashcards (move every card to the Expert deck)';
-$string['completion_all_mastered_help'] = 'If enabled, the activity is only marked complete when students have moved every single flashcard into the final Expert box (Box 5).';
-
+$string['addnewcard'] = 'Create repository card';
+$string['addtoset'] = 'Add to set';
+$string['answer'] = 'Answer';
+$string['archive'] = 'Archive';
+$string['archived'] = 'Archived';
+$string['archiveset'] = 'Archive set';
 $string['box0'] = 'New';
 $string['box1'] = 'Beginner';
 $string['box2'] = 'Learner';
 $string['box3'] = 'Advanced';
 $string['box4'] = 'Experienced';
 $string['box5'] = 'Expert';
-
-$string['queue_due'] = 'Due Today';
-$string['queue_new'] = 'New';
-$string['queue_recent'] = 'Recently Learned';
-$string['queue_all'] = 'All Cards';
-$string['newcardaccess'] = 'Due reviews come first. Once they are complete, all new cards are available.';
-$string['newcardaccessdue'] = 'Complete Due Today before starting new cards.';
-$string['newcardsblockedbydue'] = 'Complete your due reviews before starting new cards.';
-
+$string['cannotarchivesetinuse'] = 'This set is used by an activity and cannot be archived.';
+$string['cardaddedtoset'] = 'Card added to the set.';
+$string['cardarchived'] = 'Card archived. Mastery and attempt history were preserved.';
 $string['cardorder'] = 'Card Order';
+$string['cardorder_help'] = 'Determines whether cards are presented in a random order or sequentially as they were added.';
 $string['cardorder_random'] = 'Random';
 $string['cardorder_sequential'] = 'Sequential';
-$string['cardorder_help'] = 'Determines whether cards are presented in a random order or sequentially as they were added.';
+$string['cardremovedfromset'] = 'Card removed from the set. Its repository identity and mastery history were preserved.';
+$string['cardrestored'] = 'Card restored.';
+$string['category'] = 'Category';
+$string['completion_all_mastered'] = 'All cards mastered';
+$string['completion_all_mastered_desc'] = 'Students must master ALL flashcards (move every card to the Expert deck)';
+$string['completion_all_mastered_help'] = 'If enabled, the activity is only marked complete when students have moved every single flashcard into the final Expert box (Box 5).';
+$string['completion_min_cards_desc'] = 'Student must answer at least this many cards correctly at least once:';
+$string['completion_min_cards_help'] = 'A card counts as "correctly answered" once it has been rated green at least once and is in Box 1 or higher. Cards that were only rated red or yellow do not count.';
+$string['completion_min_items'] = 'Minimum cards answered correctly';
+$string['completion_min_items_help'] = 'A card counts as correctly answered once it has received at least one correct response.';
+$string['completion_min_mastered'] = 'Mastered cards (Box 5)';
+$string['completion_min_mastered_desc'] = 'Minimum number of flashcards students must master (reach Box 5):';
+$string['completion_min_mastered_help'] = 'Specifies how many cards students must promote to the Expert deck (Box 5). Important: This value must not exceed the total number of cards in the activity – otherwise completion becomes unreachable.';
+$string['createset'] = 'Create set';
+$string['defaultmasterygoal'] = 'Default mastery goal';
+$string['duplicateset'] = 'Duplicate set';
+$string['hint'] = 'Hint';
 $string['masterygoal'] = 'Set Mastery goal';
 $string['masterygoal_help'] = 'The mastery score students work toward in this activity. The card keeps its lifelong mastery score even when another course uses a different goal.';
 $string['masterygoalerror'] = 'Enter a mastery goal from 0.1 to 5.9.';
+$string['modulename'] = 'Adaptive Review';
+$string['modulename_help'] = 'Adaptive Review helps students build long-term mastery through spaced review sessions. Students review learning items repeatedly, with material they know well appearing less frequently and difficult material returning more often.';
+$string['modulenameplural'] = 'Adaptive Reviews';
+$string['newcardaccess'] = 'Due reviews come first. Once they are complete, all new cards are available.';
+$string['newcardaccessdue'] = 'Complete Due Today before starting new cards.';
+$string['newcardsblockedbydue'] = 'Complete your due reviews before starting new cards.';
+$string['pluginadministration'] = 'Adaptive Review administration';
+$string['pluginname'] = 'Adaptive Review';
+
+$string['question'] = 'Question';
+$string['queue_all'] = 'All Cards';
+$string['queue_due'] = 'Due Today';
+$string['queue_new'] = 'New';
+$string['queue_recent'] = 'Recently Learned';
+$string['removefromset'] = 'Remove from set';
+$string['repositoryempty'] = 'Create a learning set to begin building the repository.';
+$string['repositorysets'] = 'Learning sets';
+$string['repositorysharingnotice'] = 'Cards and sets in this repository are shared. Editing a card changes it in every set that uses it. Duplicate a set when you need an independent variation.';
+$string['repositorytitle'] = 'Adaptive Review Repository';
+$string['restore'] = 'Restore';
+$string['restoreset'] = 'Restore set';
+$string['reusecard'] = 'Reuse an existing card';
+$string['searchcards'] = 'Search repository cards';
+$string['searchsets'] = 'Search sets';
+$string['setarchived'] = 'Learning set archived.';
+$string['setcards'] = 'Cards in this set';
+$string['setcopyname'] = '{$a} copy';
+$string['setcreated'] = 'Learning set created.';
+$string['setcreatenew'] = 'Create a new set for this activity';
+$string['setdescription'] = 'Description';
+$string['setduplicated'] = 'An independent copy of the set and its cards was created.';
+$string['setname'] = 'Set name';
+$string['setrestored'] = 'Learning set restored.';
 $string['setselection'] = 'Learning set';
 $string['setselection_help'] = 'Choose an existing repository set or create a new set for this activity. The mastery goal remains specific to this activity.';
 $string['setselectionerror'] = 'Choose an active learning set.';
-$string['setcreatenew'] = 'Create a new set for this activity';
+$string['settings'] = 'Adaptive Review Settings';
 
-$string['repositorytitle'] = 'Adaptive Review Repository';
-$string['repositorysharingnotice'] = 'Cards and sets in this repository are shared. Editing a card changes it in every set that uses it. Duplicate a set when you need an independent variation.';
-$string['repositorysets'] = 'Learning sets';
-$string['repositoryempty'] = 'Create a learning set to begin building the repository.';
-$string['searchsets'] = 'Search sets';
-$string['searchcards'] = 'Search repository cards';
-$string['createset'] = 'Create set';
-$string['setcreated'] = 'Learning set created.';
+
+
+
+
+
 $string['setupdated'] = 'Learning set updated.';
-$string['setduplicated'] = 'An independent copy of the set and its cards was created.';
-$string['setarchived'] = 'Learning set archived.';
-$string['setrestored'] = 'Learning set restored.';
-$string['setcopyname'] = '{$a} copy';
-$string['setname'] = 'Set name';
-$string['setdescription'] = 'Description';
-$string['defaultmasterygoal'] = 'Default mastery goal';
-$string['duplicateset'] = 'Duplicate set';
-$string['archiveset'] = 'Archive set';
-$string['restoreset'] = 'Restore set';
-$string['cannotarchivesetinuse'] = 'This set is used by an activity and cannot be archived.';
-$string['archived'] = 'Archived';
-$string['archive'] = 'Archive';
-$string['restore'] = 'Restore';
-$string['activities'] = 'activities';
-$string['category'] = 'Category';
-$string['addnewcard'] = 'Create repository card';
-$string['setcards'] = 'Cards in this set';
+$string['sharedcardwarning'] = 'This card is used in {$a} sets. Saving changes updates every set that uses it.';
 $string['usedinsets'] = 'Used in sets';
 $string['usedinsetscount'] = 'Used in {$a} sets';
-$string['sharedcardwarning'] = 'This card is used in {$a} sets. Saving changes updates every set that uses it.';
-$string['reusecard'] = 'Reuse an existing card';
-$string['addtoset'] = 'Add to set';
-$string['removefromset'] = 'Remove from set';
-$string['cardaddedtoset'] = 'Card added to the set.';
-$string['cardremovedfromset'] = 'Card removed from the set. Its repository identity and mastery history were preserved.';
-$string['cardarchived'] = 'Card archived. Mastery and attempt history were preserved.';
-$string['cardrestored'] = 'Card restored.';
 
-$string['question'] = 'Question';
-$string['answer'] = 'Answer';
-$string['hint'] = 'Hint';
 
 // Progress bar
 $string['progress_label'] = 'cards meeting the goal';
@@ -216,8 +218,8 @@ $string['prompt_type_cloze'] = 'Fill-in-the-blank';
 $string['prompt_type_jeopardy'] = 'Jeopardy (Answer-Question)';
 $string['prompt_type_transfer'] = 'Transfer & Everyday Context';
 
-$string['prompt_template_standard'] = 'Create flashcards from the following text for studying. 
-Format each card EXACTLY like this, with no markdown (no asterisks, no hashes), and separate all cards with ===CARD===. 
+$string['prompt_template_standard'] = 'Create flashcards from the following text for studying.
+Format each card EXACTLY like this, with no markdown (no asterisks, no hashes), and separate all cards with ===CARD===.
 Do not write an introduction, only the pure text code.
 
 Example of the requested output format:
@@ -232,8 +234,8 @@ A: Albert Einstein
 
 Here is the text you should create the cards from:';
 
-$string['prompt_template_tf'] = 'Create True/False flashcards from the following text for studying. 
-Format each card EXACTLY like this, with no markdown, and separate all cards with ===CARD===. 
+$string['prompt_template_tf'] = 'Create True/False flashcards from the following text for studying.
+Format each card EXACTLY like this, with no markdown, and separate all cards with ===CARD===.
 Do not write an introduction, only the pure text code.
 
 Example of the requested output format:
@@ -248,8 +250,8 @@ A: False.
 
 Here is the text you should create the cards from:';
 
-$string['prompt_template_vocab'] = 'Extract the most important vocabulary or terms from the following text and create flashcards for studying. 
-Format each card EXACTLY like this, with no markdown, and separate all cards with ===CARD===. 
+$string['prompt_template_vocab'] = 'Extract the most important vocabulary or terms from the following text and create flashcards for studying.
+Format each card EXACTLY like this, with no markdown, and separate all cards with ===CARD===.
 Do not write an introduction, only the pure text code.
 
 Example of the requested output format:
@@ -264,7 +266,7 @@ A: Cell nucleus division
 
 Here is the text you should create the cards from:';
 
-$string['prompt_template_cloze'] = 'Create fill-in-the-blank flashcards from the following text for studying. 
+$string['prompt_template_cloze'] = 'Create fill-in-the-blank flashcards from the following text for studying.
 Format each card EXACTLY like this, with no markdown, and separate all cards with ===CARD===. The blank in the question is marked with [...], the required answer goes into the A field.
 Do not write an introduction, only the pure text code.
 
@@ -280,9 +282,9 @@ A: Theory of Relativity
 
 Here is the text you should create the cards from:';
 
-$string['prompt_template_jeopardy'] = 'Create Jeopardy-style flashcards based on the following topic or text for studying. 
+$string['prompt_template_jeopardy'] = 'Create Jeopardy-style flashcards based on the following topic or text for studying.
 The question (Q) describes an effect, term, or phenomenon, and the answer (A) must strictly be formulated as a counter-question (e.g., "What is...?").
-Format each card EXACTLY like this, with no markdown, and separate all cards with ===CARD===. 
+Format each card EXACTLY like this, with no markdown, and separate all cards with ===CARD===.
 Do not write an introduction, only the pure text code.
 
 Example of the requested output format:
@@ -297,9 +299,9 @@ A: What is Glucose?
 
 Here is the text you should create the cards from:';
 
-$string['prompt_template_transfer'] = 'Create flashcards based on the following topic or text focusing on transfer of learning and everyday context. 
+$string['prompt_template_transfer'] = 'Create flashcards based on the following topic or text focusing on transfer of learning and everyday context.
 The questions should encourage out-of-the-box thinking (why-questions, what-if scenarios).
-Format each card EXACTLY like this, with no markdown, and separate all cards with ===CARD===. 
+Format each card EXACTLY like this, with no markdown, and separate all cards with ===CARD===.
 Do not write an introduction, only the pure text code.
 
 Example of the requested output format:

@@ -85,8 +85,7 @@ Exit criteria:
 - Document administrator setup and repository-author role assignment.
 - Prepare a focused pull request to `biblemesh/moodle-mod_adaptivereview:bm-main`.
 
-The functional, migration, documentation, and lifecycle gates have been
-exercised locally. The remaining release gate is the repository's inherited
-Moodle CodeSniffer baseline. See [the release audit](mvp-release-audit.md) for
-the exact results; this step should not be marked complete until that gate and
-the pull request's CI matrix pass.
+The functional, migration, documentation, lifecycle, and Moodle Code Checker
+gates have been exercised locally. See [the release audit](mvp-release-audit.md)
+for the exact results; this step should not be marked complete until the pull
+request's hosted CI matrix passes.

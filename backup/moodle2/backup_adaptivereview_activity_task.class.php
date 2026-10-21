@@ -15,6 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Activity backup task for Adaptive Review.
+ *
  * @package   mod_adaptivereview
  * @copyright 2026 Peter Pleimfeldner
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -25,18 +27,32 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->dirroot . '/mod/adaptivereview/backup/moodle2/backup_adaptivereview_stepslib.php');
 
+/**
+ * Configures activity backup steps and encoded links.
+ */
 class backup_adaptivereview_activity_task extends backup_activity_task {
-
+    /**
+     * Define activity-specific backup settings.
+     */
     protected function define_my_settings() {
         // No particular settings for this activity.
     }
 
+    /**
+     * Add the activity structure backup step.
+     */
     protected function define_my_steps() {
         // Add the adaptivereview structure step.
         $this->add_step(new backup_adaptivereview_activity_structure_step('adaptivereview_structure', 'adaptivereview.xml'));
     }
 
-    static public function encode_content_links($content) {
+    /**
+     * Encode links to Adaptive Review pages in backed-up content.
+     *
+     * @param string $content Content containing links.
+     * @return string Content with encoded links.
+     */
+    public static function encode_content_links($content) {
         global $CFG;
 
         $base = preg_quote($CFG->wwwroot, "/");

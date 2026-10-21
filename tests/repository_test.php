@@ -28,7 +28,6 @@ use mod_adaptivereview\local\student_summary;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class repository_test extends \advanced_testcase {
-
     /**
      * Repository operations preserve sharing, ordering, and archival rules.
      */
@@ -123,8 +122,12 @@ final class repository_test extends \advanced_testcase {
             'masterygoal' => 4.5,
         ]);
 
-        $cardids = $DB->get_fieldset_select('adaptivereview_set_cards', 'cardid', 'setid = ?',
-            [$firstactivity->setid]);
+        $cardids = $DB->get_fieldset_select(
+            'adaptivereview_set_cards',
+            'cardid',
+            'setid = ?',
+            [$firstactivity->setid]
+        );
         $cardid = reset($cardids);
         $this->assertNotFalse($cardid);
         $card = $DB->get_record('adaptivereview_cards', ['id' => $cardid], '*', MUST_EXIST);
@@ -171,12 +174,21 @@ final class repository_test extends \advanced_testcase {
         $student = $this->getDataGenerator()->create_user();
         $this->getDataGenerator()->enrol_user($student->id, $course->id, 'student');
         $activity = $this->getDataGenerator()->create_module('adaptivereview', ['course' => $course->id]);
-        $cardids = $DB->get_fieldset_select('adaptivereview_set_cards', 'cardid', 'setid = ?',
-            [$activity->setid], 'sortorder ASC');
+        $cardids = $DB->get_fieldset_select(
+            'adaptivereview_set_cards',
+            'cardid',
+            'setid = ?',
+            [$activity->setid],
+            'sortorder ASC'
+        );
         $card = $DB->get_record('adaptivereview_cards', ['id' => reset($cardids)], '*', MUST_EXIST);
 
-        $session = review_manager::start_session((int) $activity->id, (int) $student->id,
-            review_manager::MODE_NEW, 1000000);
+        $session = review_manager::start_session(
+            (int) $activity->id,
+            (int) $student->id,
+            review_manager::MODE_NEW,
+            1000000
+        );
         review_manager::record_attempt($session, $card, review_manager::RESPONSE_KNOW, 1000010);
         repository_manager::archive_card((int) $card->id, (int) get_admin()->id, 1000020);
 

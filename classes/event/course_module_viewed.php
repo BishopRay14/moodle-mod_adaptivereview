@@ -33,7 +33,6 @@ defined('MOODLE_INTERNAL') || die();
  * The mod_adaptivereview course module viewed event class.
  */
 class course_module_viewed extends \core\event\course_module_viewed {
-
     /**
      * Init method.
      *

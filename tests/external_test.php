@@ -34,11 +34,11 @@ defined('MOODLE_INTERNAL') || die();
  * External functions unit tests for mod_adaptivereview.
  */
 final class external_test extends \core_external\tests\externallib_testcase {
-
     /**
      * Set up for every test
      */
     public function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest();
         $this->setAdminUser();
     }
@@ -58,8 +58,12 @@ final class external_test extends \core_external\tests\externallib_testcase {
         $adaptivereview = $this->getDataGenerator()->create_module('adaptivereview', ['course' => $course->id]);
 
         // Clear default demo cards inserted by the mod_form/lib.php to start fresh.
-        $democardids = $DB->get_fieldset_select('adaptivereview_set_cards', 'cardid', 'setid = ?',
-            [$adaptivereview->setid]);
+        $democardids = $DB->get_fieldset_select(
+            'adaptivereview_set_cards',
+            'cardid',
+            'setid = ?',
+            [$adaptivereview->setid]
+        );
         $DB->delete_records('adaptivereview_set_cards', ['setid' => $adaptivereview->setid]);
         if ($democardids) {
             [$insql, $params] = $DB->get_in_or_equal($democardids);
@@ -154,8 +158,8 @@ final class external_test extends \core_external\tests\externallib_testcase {
     /**
      * Test getting cards by box.
      */
-    public function test_get_cards_by_box() {
-        list($course, $student, $adaptivereview, $card) = $this->create_adaptivereview_activity();
+    public function test_get_cards_by_box(): void {
+        [$course, $student, $adaptivereview, $card] = $this->create_adaptivereview_activity();
 
         // Must be logged in as the student.
         $this->setUser($student);
@@ -327,9 +331,9 @@ final class external_test extends \core_external\tests\externallib_testcase {
     /**
      * Test first attempts and same-session remediation history.
      */
-    public function test_submit_answer() {
+    public function test_submit_answer(): void {
         global $DB;
-        list($course, $student, $adaptivereview, $card) = $this->create_adaptivereview_activity();
+        [$course, $student, $adaptivereview, $card] = $this->create_adaptivereview_activity();
 
         $this->setUser($student);
 
@@ -371,9 +375,9 @@ final class external_test extends \core_external\tests\externallib_testcase {
     /**
      * Test that Not Yet schedules recovery without reducing mastery.
      */
-    public function test_not_yet_does_not_reduce_mastery() {
+    public function test_not_yet_does_not_reduce_mastery(): void {
         global $DB;
-        list($course, $student, $adaptivereview, $card) = $this->create_adaptivereview_activity();
+        [$course, $student, $adaptivereview, $card] = $this->create_adaptivereview_activity();
         $this->setUser($student);
 
         $session = external::start_review_session($adaptivereview->id, 'new');
@@ -398,9 +402,9 @@ final class external_test extends \core_external\tests\externallib_testcase {
     /**
      * Test that early practice is recorded without changing summary state.
      */
-    public function test_early_practice_records_history_only() {
+    public function test_early_practice_records_history_only(): void {
         global $DB;
-        list($course, $student, $adaptivereview, $card) = $this->create_adaptivereview_activity();
+        [$course, $student, $adaptivereview, $card] = $this->create_adaptivereview_activity();
         $this->setUser($student);
 
         $session = external::start_review_session($adaptivereview->id, 'early');
@@ -447,16 +451,16 @@ final class external_test extends \core_external\tests\externallib_testcase {
     /**
      * Test resetting progress.
      */
-    public function test_reset_progress() {
+    public function test_reset_progress(): void {
         global $DB;
-        list($course, $student, $adaptivereview, $card) = $this->create_adaptivereview_activity();
+        [$course, $student, $adaptivereview, $card] = $this->create_adaptivereview_activity();
 
         $this->setUser($student);
 
         // Submit an answer to create a progress record.
         $session = external::start_review_session($adaptivereview->id, 'new');
         external::submit_answer($card->id, 'know', $session['sessionkey']);
-        
+
         // Ensure progress exists.
         $this->assertEquals(1, $DB->count_records('adaptivereview_mastery', ['userid' => $student->id]));
 
@@ -475,8 +479,8 @@ final class external_test extends \core_external\tests\externallib_testcase {
     /**
      * Test that invalid box number throws exception.
      */
-    public function test_get_cards_by_box_invalid_box() {
-        list($course, $student, $adaptivereview, $card) = $this->create_adaptivereview_activity();
+    public function test_get_cards_by_box_invalid_box(): void {
+        [$course, $student, $adaptivereview, $card] = $this->create_adaptivereview_activity();
         $this->setUser($student);
         $this->expectException(\moodle_exception::class);
         external::get_cards_by_box($adaptivereview->id, 99);
@@ -485,9 +489,9 @@ final class external_test extends \core_external\tests\externallib_testcase {
     /**
      * Test completion state: min_cards condition uses DISTINCT card count.
      */
-    public function test_completion_min_cards_counts_unique_cards() {
+    public function test_completion_min_cards_counts_unique_cards(): void {
         global $DB;
-        list($course, $student, $adaptivereview, $card) = $this->create_adaptivereview_activity();
+        [$course, $student, $adaptivereview, $card] = $this->create_adaptivereview_activity();
         $this->setUser($student);
 
         $session = external::start_review_session($adaptivereview->id, 'new');
@@ -498,8 +502,8 @@ final class external_test extends \core_external\tests\externallib_testcase {
         }
 
         // Despite five attempts, only one mutable summary row exists.
-        $progress_count = $DB->count_records('adaptivereview_mastery', ['userid' => $student->id]);
-        $this->assertEquals(1, $progress_count);
+        $progresscount = $DB->count_records('adaptivereview_mastery', ['userid' => $student->id]);
+        $this->assertEquals(1, $progresscount);
         $this->assertEquals(5, $DB->count_records('adaptivereview_attempts'));
     }
 }

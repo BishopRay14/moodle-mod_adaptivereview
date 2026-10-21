@@ -45,7 +45,6 @@ use core_completion\activity_custom_completion;
  * 3. If ALL active rules return COMPLETION_COMPLETE, the activity is complete.
  */
 class custom_completion extends activity_custom_completion {
-
     /**
      * Fetches the list of custom completion rule names that this module defines.
      * This is the full list of possible rules — not which are active per instance.
@@ -113,7 +112,7 @@ class custom_completion extends activity_custom_completion {
             if (empty($customrules['completion_min_mastered'])) {
                 return COMPLETION_COMPLETE;
             }
-            
+
             $target = (int)$customrules['completion_min_mastered'];
             $sql = "SELECT COUNT(DISTINCT cardid)
                       FROM {adaptivereview_mastery}
@@ -133,7 +132,7 @@ class custom_completion extends activity_custom_completion {
             if (empty($customrules['completion_all_mastered'])) {
                 return COMPLETION_COMPLETE;
             }
-            
+
             $total = (int) $DB->count_records_sql(
                 "SELECT COUNT(*)
                    FROM {adaptivereview_set_cards} sc
@@ -144,7 +143,7 @@ class custom_completion extends activity_custom_completion {
             if ($total === 0) {
                 return COMPLETION_INCOMPLETE; // No cards exist yet.
             }
-            
+
             $sql = "SELECT COUNT(DISTINCT p.cardid)
                       FROM {adaptivereview_mastery} p
                       JOIN {adaptivereview_set_cards} sc ON p.cardid = sc.cardid

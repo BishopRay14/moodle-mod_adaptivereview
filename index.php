@@ -39,8 +39,10 @@ echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('modulenameplural', 'mod_adaptivereview'));
 
 if (!$adaptivereviews = get_all_instances_in_course('adaptivereview', $course)) {
-    notice(get_string('thereareno', 'moodle', get_string('modulenameplural', 'mod_adaptivereview')),
-        new moodle_url('/course/view.php', ['id' => $course->id]));
+    notice(
+        get_string('thereareno', 'moodle', get_string('modulenameplural', 'mod_adaptivereview')),
+        new moodle_url('/course/view.php', ['id' => $course->id])
+    );
 }
 
 $table = new html_table();

@@ -26,7 +26,6 @@ use mod_adaptivereview\local\review_manager;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class repository_migration_fixture_test extends \advanced_testcase {
-
     /**
      * Migrate a complete legacy fixture without changing card or history IDs.
      */
@@ -98,8 +97,10 @@ final class repository_migration_fixture_test extends \advanced_testcase {
         $activities = $DB->get_records('adaptivereview', null, 'id ASC');
         foreach ($activities as $activity) {
             $this->assertGreaterThan(0, $activity->setid);
-            $this->assertEquals(1,
-                $DB->count_records('adaptivereview_set_cards', ['setid' => $activity->setid]));
+            $this->assertEquals(
+                1,
+                $DB->count_records('adaptivereview_set_cards', ['setid' => $activity->setid])
+            );
         }
 
         $cards = $DB->get_records('adaptivereview_cards', null, 'id ASC');
@@ -165,41 +166,81 @@ final class repository_migration_fixture_test extends \advanced_testcase {
         $masterytable = new \xmldb_table('adaptivereview_mastery');
         $attempttable = new \xmldb_table('adaptivereview_attempts');
 
-        $field = new \xmldb_field('adaptivereviewid', XMLDB_TYPE_INTEGER, '10', null,
-            XMLDB_NOTNULL, null, '0', 'id');
+        $field = new \xmldb_field(
+            'adaptivereviewid',
+            XMLDB_TYPE_INTEGER,
+            '10',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '0',
+            'id'
+        );
         $dbman->add_field($cardtable, $field);
         $activities = $DB->get_records('adaptivereview', null, '', 'id, setid');
         foreach ($activities as $activity) {
-            $cardids = $DB->get_fieldset_select('adaptivereview_set_cards', 'cardid', 'setid = ?',
-                [$activity->setid]);
+            $cardids = $DB->get_fieldset_select(
+                'adaptivereview_set_cards',
+                'cardid',
+                'setid = ?',
+                [$activity->setid]
+            );
             if ($cardids) {
                 [$insql, $params] = $DB->get_in_or_equal($cardids);
-                $DB->set_field_select('adaptivereview_cards', 'adaptivereviewid', $activity->id,
-                    "id $insql", $params);
+                $DB->set_field_select(
+                    'adaptivereview_cards',
+                    'adaptivereviewid',
+                    $activity->id,
+                    "id $insql",
+                    $params
+                );
             }
         }
 
-        $dbman->drop_key($activitytable,
-            new \xmldb_key('setid', XMLDB_KEY_FOREIGN, ['setid'], 'adaptivereview_sets', ['id']));
-        $dbman->drop_field($activitytable,
-            new \xmldb_field('masterygoal', XMLDB_TYPE_NUMBER, '3,1', null, XMLDB_NOTNULL, null, '4.0'));
-        $dbman->drop_field($activitytable,
-            new \xmldb_field('setid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0'));
+        $dbman->drop_key(
+            $activitytable,
+            new \xmldb_key('setid', XMLDB_KEY_FOREIGN, ['setid'], 'adaptivereview_sets', ['id'])
+        );
+        $dbman->drop_field(
+            $activitytable,
+            new \xmldb_field('masterygoal', XMLDB_TYPE_NUMBER, '3,1', null, XMLDB_NOTNULL, null, '4.0')
+        );
+        $dbman->drop_field(
+            $activitytable,
+            new \xmldb_field('setid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0')
+        );
 
-        $dbman->drop_key($masterytable,
-            new \xmldb_key('cardid', XMLDB_KEY_FOREIGN, ['cardid'], 'adaptivereview_cards', ['id']));
-        $dbman->drop_index($masterytable,
-            new \xmldb_index('userid_cardid', XMLDB_INDEX_UNIQUE, ['userid', 'cardid']));
-        $dbman->rename_field($masterytable,
-            new \xmldb_field('cardid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0'), 'itemid');
+        $dbman->drop_key(
+            $masterytable,
+            new \xmldb_key('cardid', XMLDB_KEY_FOREIGN, ['cardid'], 'adaptivereview_cards', ['id'])
+        );
+        $dbman->drop_index(
+            $masterytable,
+            new \xmldb_index('userid_cardid', XMLDB_INDEX_UNIQUE, ['userid', 'cardid'])
+        );
+        $dbman->rename_field(
+            $masterytable,
+            new \xmldb_field('cardid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0'),
+            'itemid'
+        );
 
-        $dbman->drop_key($attempttable,
-            new \xmldb_key('cardid', XMLDB_KEY_FOREIGN, ['cardid'], 'adaptivereview_cards', ['id']));
-        $dbman->drop_index($attempttable,
-            new \xmldb_index('sessionid_cardid_attempt', XMLDB_INDEX_UNIQUE,
-                ['sessionid', 'cardid', 'attemptnumber']));
-        $dbman->rename_field($attempttable,
-            new \xmldb_field('cardid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0'), 'itemid');
+        $dbman->drop_key(
+            $attempttable,
+            new \xmldb_key('cardid', XMLDB_KEY_FOREIGN, ['cardid'], 'adaptivereview_cards', ['id'])
+        );
+        $dbman->drop_index(
+            $attempttable,
+            new \xmldb_index(
+                'sessionid_cardid_attempt',
+                XMLDB_INDEX_UNIQUE,
+                ['sessionid', 'cardid', 'attemptnumber']
+            )
+        );
+        $dbman->rename_field(
+            $attempttable,
+            new \xmldb_field('cardid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0'),
+            'itemid'
+        );
 
         $dbman->drop_table(new \xmldb_table('adaptivereview_set_cards'));
         $dbman->drop_table(new \xmldb_table('adaptivereview_sets'));
@@ -212,14 +253,22 @@ final class repository_migration_fixture_test extends \advanced_testcase {
         $dbman->rename_table($cardtable, 'adaptivereview_items');
 
         $itemtable = new \xmldb_table('adaptivereview_items');
-        $dbman->add_key($itemtable,
-            new \xmldb_key('adaptivereviewid', XMLDB_KEY_FOREIGN, ['adaptivereviewid'], 'adaptivereview', ['id']));
-        $dbman->add_key($masterytable,
-            new \xmldb_key('itemid', XMLDB_KEY_FOREIGN, ['itemid'], 'adaptivereview_items', ['id']));
-        $dbman->add_index($masterytable,
-            new \xmldb_index('userid_itemid', XMLDB_INDEX_UNIQUE, ['userid', 'itemid']));
-        $dbman->add_key($attempttable,
-            new \xmldb_key('itemid', XMLDB_KEY_FOREIGN, ['itemid'], 'adaptivereview_items', ['id']));
+        $dbman->add_key(
+            $itemtable,
+            new \xmldb_key('adaptivereviewid', XMLDB_KEY_FOREIGN, ['adaptivereviewid'], 'adaptivereview', ['id'])
+        );
+        $dbman->add_key(
+            $masterytable,
+            new \xmldb_key('itemid', XMLDB_KEY_FOREIGN, ['itemid'], 'adaptivereview_items', ['id'])
+        );
+        $dbman->add_index(
+            $masterytable,
+            new \xmldb_index('userid_itemid', XMLDB_INDEX_UNIQUE, ['userid', 'itemid'])
+        );
+        $dbman->add_key(
+            $attempttable,
+            new \xmldb_key('itemid', XMLDB_KEY_FOREIGN, ['itemid'], 'adaptivereview_items', ['id'])
+        );
         $legacyattemptfields = [];
         $legacyattemptfields[] = 'sessionid';
         $legacyattemptfields[] = 'itemid';

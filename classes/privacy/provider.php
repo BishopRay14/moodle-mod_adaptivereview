@@ -15,6 +15,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Privacy provider for Adaptive Review.
+ *
  * @package   mod_adaptivereview
  * @copyright 2026 Peter Pleimfeldner
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -32,9 +34,17 @@ use core_privacy\local\request\core_userlist_provider;
 
 defined('MOODLE_INTERNAL') || die();
 
-class provider implements metadata_provider, plugin_provider, core_userlist_provider {
-
-    public static function get_metadata(collection $collection) : collection {
+/**
+ * Implements metadata, export, and deletion for Adaptive Review user data.
+ */
+class provider implements core_userlist_provider, metadata_provider, plugin_provider {
+    /**
+     * Describe personal data stored by the plugin.
+     *
+     * @param collection $collection Metadata collection.
+     * @return collection Updated metadata collection.
+     */
+    public static function get_metadata(collection $collection): collection {
         $collection->add_database_table(
             'adaptivereview_cards',
             [
@@ -105,7 +115,13 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
         return $collection;
     }
 
-    public static function get_contexts_for_userid(int $userid) : contextlist {
+    /**
+     * Return contexts containing data for a user.
+     *
+     * @param int $userid User ID.
+     * @return contextlist Contexts containing user data.
+     */
+    public static function get_contexts_for_userid(int $userid): contextlist {
         $contextlist = new contextlist();
         if (self::global_user_data_exists($userid)) {
             $contextlist->add_system_context();
@@ -126,18 +142,35 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
         return $contextlist;
     }
 
+    /**
+     * Add users with data in the supplied context.
+     *
+     * @param userlist $userlist Context-bound user list.
+     */
     public static function get_users_in_context(userlist $userlist) {
         $context = $userlist->get_context();
         if ($context->contextlevel === CONTEXT_SYSTEM) {
             $userlist->add_from_sql('userid', 'SELECT userid FROM {adaptivereview_mastery}', []);
-            $userlist->add_from_sql('createdby',
-                'SELECT createdby FROM {adaptivereview_cards} WHERE createdby > 0', []);
-            $userlist->add_from_sql('modifiedby',
-                'SELECT modifiedby FROM {adaptivereview_cards} WHERE modifiedby > 0', []);
-            $userlist->add_from_sql('createdby',
-                'SELECT createdby FROM {adaptivereview_sets} WHERE createdby > 0', []);
-            $userlist->add_from_sql('modifiedby',
-                'SELECT modifiedby FROM {adaptivereview_sets} WHERE modifiedby > 0', []);
+            $userlist->add_from_sql(
+                'createdby',
+                'SELECT createdby FROM {adaptivereview_cards} WHERE createdby > 0',
+                []
+            );
+            $userlist->add_from_sql(
+                'modifiedby',
+                'SELECT modifiedby FROM {adaptivereview_cards} WHERE modifiedby > 0',
+                []
+            );
+            $userlist->add_from_sql(
+                'createdby',
+                'SELECT createdby FROM {adaptivereview_sets} WHERE createdby > 0',
+                []
+            );
+            $userlist->add_from_sql(
+                'modifiedby',
+                'SELECT modifiedby FROM {adaptivereview_sets} WHERE modifiedby > 0',
+                []
+            );
             return;
         }
         if ($context->contextlevel != CONTEXT_MODULE) {
@@ -157,6 +190,11 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
         $userlist->add_from_sql('userid', $sql, $params);
     }
 
+    /**
+     * Export approved user data.
+     *
+     * @param approved_contextlist $contextlist Approved contexts for the user.
+     */
     public static function export_user_data(approved_contextlist $contextlist) {
         global $DB;
         if (empty($contextlist->count())) {
@@ -238,6 +276,11 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
         }
     }
 
+    /**
+     * Delete data for every user in a context.
+     *
+     * @param \context $context Context to erase.
+     */
     public static function delete_data_for_all_users_in_context(\context $context) {
         global $DB;
         if ($context->contextlevel === CONTEXT_SYSTEM) {
@@ -257,6 +300,11 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
         }
     }
 
+    /**
+     * Delete data for a user in approved contexts.
+     *
+     * @param approved_contextlist $contextlist Approved contexts for the user.
+     */
     public static function delete_data_for_user(approved_contextlist $contextlist) {
         if (empty($contextlist->count())) {
             return;
@@ -276,6 +324,11 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
         }
     }
 
+    /**
+     * Delete data for approved users in a context.
+     *
+     * @param approved_userlist $userlist Approved users and context.
+     */
     public static function delete_data_for_users(approved_userlist $userlist) {
         $context = $userlist->get_context();
         $userids = $userlist->get_userids();
@@ -346,10 +399,18 @@ class provider implements metadata_provider, plugin_provider, core_userlist_prov
             );
         }
 
-        $cards = $DB->get_records_select('adaptivereview_cards', 'createdby = ? OR modifiedby = ?',
-            [$userid, $userid], 'id');
-        $sets = $DB->get_records_select('adaptivereview_sets', 'createdby = ? OR modifiedby = ?',
-            [$userid, $userid], 'id');
+        $cards = $DB->get_records_select(
+            'adaptivereview_cards',
+            'createdby = ? OR modifiedby = ?',
+            [$userid, $userid],
+            'id'
+        );
+        $sets = $DB->get_records_select(
+            'adaptivereview_sets',
+            'createdby = ? OR modifiedby = ?',
+            [$userid, $userid],
+            'id'
+        );
         if ($cards || $sets) {
             \core_privacy\local\request\writer::with_context($context)->export_data(
                 [get_string('pluginname', 'mod_adaptivereview'), get_string('repositoryauthorship', 'mod_adaptivereview')],

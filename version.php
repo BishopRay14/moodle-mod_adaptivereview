@@ -15,31 +15,15 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Version metadata for the Adaptive Review activity module.
+ *
  * @package   mod_adaptivereview
  * @copyright 2026 Peter Pleimfeldner
- * @contact   leitbox.moodle@gmail.com
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 defined('MOODLE_INTERNAL') || die();
 
-/**
- * VERSIONING RULES (For Developers / AI Tooling):
- * This plugin uses Semantic Versioning (MAJOR.MINOR.PATCH):
- * 
- * - MAJOR (e.g., 1.0.0 -> 2.0.0): 
- *   Use for deep architectural changes, replacing frameworks, or formally 
- *   dropping compatibility with older Moodle versions.
- *
- * - MINOR (e.g., 1.4.0 -> 1.5.0): 
- *   Use for new features, new settings in the Moodle form (e.g., completion conditions), 
- *   or structural database updates (XMLDB).
- *
- * - PATCH (e.g., 1.4.0 -> 1.4.1): 
- *   Use strictly for bugfixes, language string corrections, minor CSS tweaks, 
- *   or anything that carries zero architectural risk.
- *
- * EVERY release must be officially block-documented in CHANGELOG.md!
- */
+// Releases use semantic versioning and must be documented in CHANGELOG.md.
 
 $plugin->version   = 2026102000; // The current module version (Date: YYYYMMDDXX).
 $plugin->requires  = 2025041400; // Requires Moodle 5.0.
