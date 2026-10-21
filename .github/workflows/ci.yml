@@ -107,7 +107,9 @@ jobs:
 
       - name: Mustache Lint
         if: ${{ !cancelled() }}
-        run: moodle-plugin-ci mustache ./plugin
+        # Mustache lint resolves templates relative to Moodle's dirroot, so use
+        # the plugin path created by moodle-plugin-ci during installation.
+        run: moodle-plugin-ci mustache ./moodle/public/mod/adaptivereview
 
       - name: PHPUnit tests
         if: ${{ !cancelled() }}
