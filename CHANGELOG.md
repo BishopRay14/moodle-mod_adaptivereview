@@ -2,6 +2,15 @@
 
 Alle nennenswerten Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [1.0.0-rc1] - 2026-10-21 (MVP Release Candidate)
+
+### Changed
+- Promoted the global repository and `mastery-v1` implementation to its first MVP release candidate.
+- Completed the four-job Moodle 5.0, 5.2, and 5.3 compatibility matrix across PHP 8.2–8.4 and PostgreSQL 16–17.
+- Added cross-version Mustache lint support for Moodle's legacy and `public/` plugin layouts.
+- Added repository-template example data for standards-compliant HTML validation.
+- Hardened hosted browser tests for Moodle 5.3's slower Tiny editor initialization on shared runners.
+
 ## [0.9.0-prototype] - 2026-10-20 (Moodle Lifecycle Coverage)
 
 ### Added
